@@ -6,6 +6,8 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import MathBackground from '@/components/MathBackground';
+import EquationReveal from '@/components/EquationReveal';
+import AutoSolveDemo from '@/components/AutoSolveDemo';
 import { MathoraMark, MathMotif, Card, Button, Badge } from '@/components/ui/Primitives';
 import { Sparkles, Target, ChevronRight, Play, Lightbulb, GraduationCap, Users } from 'lucide-react';
 
@@ -56,7 +58,7 @@ export default function LandingPage() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="absolute top-16 left-[5%] paper-card px-4 py-2.5 rounded-xl border border-slate-700 shadow-2xl animate-math-drift hidden lg:block z-10 font-mono"
         >
-          <MathRenderer content="$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$" className="text-xs font-semibold text-amber-300" />
+          <EquationReveal content="$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$" className="text-xs font-semibold text-amber-300" duration={1.4} delay={0.6} />
         </motion.div>
 
         <motion.div
@@ -66,7 +68,7 @@ export default function LandingPage() {
           transition={{ duration: 0.7, delay: 0.4 }}
           className="absolute top-44 right-[6%] paper-card px-4 py-2.5 rounded-xl border border-slate-700 shadow-2xl animate-math-drift-delayed hidden lg:block z-10 font-mono"
         >
-          <MathRenderer content="$\sin^2 \theta + \cos^2 \theta = 1$" className="text-xs font-semibold text-cyan-300" />
+          <EquationReveal content="$\sin^2 \theta + \cos^2 \theta = 1$" className="text-xs font-semibold text-cyan-300" duration={1.2} delay={0.9} />
         </motion.div>
 
         {/* Main Hero Content */}
@@ -208,6 +210,17 @@ export default function LandingPage() {
               )}
             </div>
           </motion.div>
+
+          {/* Auto-Solving Live Demo */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="mt-6 max-w-3xl mx-auto"
+          >
+            <AutoSolveDemo />
+          </motion.div>
         </div>
       </section>
 
@@ -306,7 +319,7 @@ export default function LandingPage() {
                       Instead of plain textbook text, every mathematical formula is deconstructed into readable step-by-step components:
                     </p>
                     <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 font-mono">
-                      <MathRenderer content="Solve $3x^2 - 7x + 2 = 0$ by identifying factors of $ac = 3 \times 2 = 6$ that sum to $-7$." className="text-sm text-white font-semibold" />
+                      <EquationReveal content="Solve $3x^2 - 7x + 2 = 0$ by identifying factors of $ac = 3 \times 2 = 6$ that sum to $-7$." className="text-sm text-white font-semibold" duration={1.3} showCaret={false} />
                     </div>
                   </motion.div>
                 )}
@@ -336,7 +349,7 @@ export default function LandingPage() {
                       <Lightbulb className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5 animate-pulse" />
                       <div>
                         <span className="text-xs font-mono font-bold text-purple-300 uppercase">Diagnosed Sign Misunderstanding:</span>
-                        <MathRenderer content="When expanding $-6x - x$, pay attention to factor multiplication: $(-6) \times (-1) = +6$. Don't swap positive constants!" className="text-xs text-slate-200 mt-1" />
+                        <EquationReveal content="When expanding $-6x - x$, pay attention to factor multiplication: $(-6) \times (-1) = +6$. Don't swap positive constants!" className="text-xs text-slate-200 mt-1" duration={1.3} delay={0.15} showCaret={false} />
                       </div>
                     </motion.div>
                   </motion.div>
@@ -367,7 +380,7 @@ export default function LandingPage() {
                       <Sparkles className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="text-xs font-mono font-bold text-emerald-300 uppercase">WAEC MCQ Technique:</span>
-                        <MathRenderer content="For $ax^2 + bx + c = 0$, sum of roots is $-\frac{b}{a} = \frac{7}{3}$ and product is $\frac{c}{a} = \frac{2}{3}$. Test options instantly using root products!" className="text-xs text-slate-200 mt-1" />
+                        <EquationReveal content="For $ax^2 + bx + c = 0$, sum of roots is $-\frac{b}{a} = \frac{7}{3}$ and product is $\frac{c}{a} = \frac{2}{3}$. Test options instantly using root products!" className="text-xs text-slate-200 mt-1" duration={1.3} delay={0.15} showCaret={false} />
                       </div>
                     </motion.div>
                   </motion.div>
