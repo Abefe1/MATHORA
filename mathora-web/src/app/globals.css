@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased min-h-screen selection:bg-amber-500 selection:text-slate-950;
+    font-family: var(--font-sans, system-ui, sans-serif);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display, system-ui, sans-serif);
+    letter-spacing: -0.02em;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono, monospace);
+  }
+}
+
+/* --- Mathora Exercise Book & Graph Paper Textures --- */
+
+.bg-graph-paper {
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-graph-paper-light {
+  background-image: 
+    linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* Secondary School Exercise Book Left Margin Accent */
+.notebook-margin {
+  border-left: 3px solid rgba(245, 158, 11, 0.8);
+}
+
+/* WAEC Exam Paper Double Line Divider */
+.exam-double-rule {
+  border-top: 3px double rgba(148, 163, 184, 0.3);
+}
+
+/* Distinct Surface Cards */
+.paper-card {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.paper-card-light {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+}
+
+/* Role Specific Surfaces */
+.student-notebook-surface {
+  background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.05), transparent 40%),
+              rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.teacher-ledger-surface {
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.parent-report-surface {
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+/* Signature Chalk Glow */
+.chalk-glow {
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.25);
+}
+
+/* Math Keyframe Animations */
+@keyframes mathDrift {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1.5deg);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.04);
+  }
+}
+
+.animate-math-drift {
+  animation: mathDrift 6s ease-in-out infinite;
+}
+
+.animate-math-drift-delayed {
+  animation: mathDrift 8s ease-in-out 2s infinite;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 5s ease-in-out infinite;
+}
