@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import MathBackground from '@/components/MathBackground';
 import { MathoraMark, MathMotif, Card, Button, Badge } from '@/components/ui/Primitives';
-import { Sparkles, Target, ChevronRight, Calculator, Play, Lightbulb, GraduationCap, Users } from 'lucide-react';
+import { Sparkles, Target, ChevronRight, Play, Lightbulb, GraduationCap, Users } from 'lucide-react';
 
 export default function LandingPage() {
   // Live Quadratic Solver State
@@ -214,7 +214,13 @@ export default function LandingPage() {
       {/* 3-Step Remediation Simulator Section */}
       <section className="py-20 bg-slate-900/80 border-y border-slate-800 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-3xl mx-auto mb-14"
+          >
             <Badge variant="waec">The Mathora Learning Engine</Badge>
             <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-white mt-3">
               How Students Master Complex Topics
@@ -222,156 +228,239 @@ export default function LandingPage() {
             <p className="text-slate-400 text-sm mt-3">
               Click through the three steps to experience Rescue Mode remediation when a student makes a mistake.
             </p>
-          </div>
+          </motion.div>
 
           {/* Switcher */}
-          <div className="flex justify-center gap-3 mb-10 max-w-xl mx-auto font-mono">
-            <button
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="flex justify-center gap-3 mb-10 max-w-xl mx-auto font-mono"
+          >
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setActiveStep(1)}
-              className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all border ${
+              className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-colors border ${
                 activeStep === 1
                   ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               01. Understand
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setActiveStep(2)}
-              className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all border ${
+              className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-colors border ${
                 activeStep === 2
                   ? 'bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-500/20'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               02. Rescue Mode
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setActiveStep(3)}
-              className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all border ${
+              className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-colors border ${
                 activeStep === 3
                   ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               03. WAEC Shortcut
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
 
           {/* Active Step Card */}
-          <Card variant="notebook" className="max-w-3xl mx-auto shadow-2xl relative">
-            {activeStep === 1 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <MathMotif type="function" className="w-6 h-6 text-amber-400" />
-                  <div>
-                    <h3 className="text-xl font-display font-bold text-white">1. Deconstruction & Understanding</h3>
-                    <p className="text-xs font-mono text-amber-300">Clear Markdown & KaTeX equation typesetting</p>
-                  </div>
-                </div>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Instead of plain textbook text, every mathematical formula is deconstructed into readable step-by-step components:
-                </p>
-                <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 font-mono">
-                  <MathRenderer content="Solve $3x^2 - 7x + 2 = 0$ by identifying factors of $ac = 3 \times 2 = 6$ that sum to $-7$." className="text-sm text-white font-semibold" />
-                </div>
-              </div>
-            )}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="max-w-3xl mx-auto"
+          >
+            <Card variant="notebook" className="shadow-2xl relative overflow-hidden">
+              <AnimatePresence mode="wait">
+                {activeStep === 1 && (
+                  <motion.div
+                    key="step-1"
+                    initial={{ opacity: 0, x: 24 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -24 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MathMotif type="function" className="w-6 h-6 text-amber-400" />
+                      <div>
+                        <h3 className="text-xl font-display font-bold text-white">1. Deconstruction & Understanding</h3>
+                        <p className="text-xs font-mono text-amber-300">Clear Markdown & KaTeX equation typesetting</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      Instead of plain textbook text, every mathematical formula is deconstructed into readable step-by-step components:
+                    </p>
+                    <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 font-mono">
+                      <MathRenderer content="Solve $3x^2 - 7x + 2 = 0$ by identifying factors of $ac = 3 \times 2 = 6$ that sum to $-7$." className="text-sm text-white font-semibold" />
+                    </div>
+                  </motion.div>
+                )}
 
-            {activeStep === 2 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <MathMotif type="delta" className="w-6 h-6 text-purple-400" />
-                  <div>
-                    <h3 className="text-xl font-display font-bold text-white">2. Automatic Rescue Remediation</h3>
-                    <p className="text-xs font-mono text-purple-300">Triggers immediately on incorrect quiz selection</p>
-                  </div>
-                </div>
-                <div className="bg-purple-950/40 border border-purple-900/60 rounded-xl p-4 flex items-start gap-3">
-                  <Lightbulb className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-xs font-mono font-bold text-purple-300 uppercase">Diagnosed Sign Misunderstanding:</span>
-                    <MathRenderer content="When expanding $-6x - x$, pay attention to factor multiplication: $(-6) \times (-1) = +6$. Don't swap positive constants!" className="text-xs text-slate-200 mt-1" />
-                  </div>
-                </div>
-              </div>
-            )}
+                {activeStep === 2 && (
+                  <motion.div
+                    key="step-2"
+                    initial={{ opacity: 0, x: 24 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -24 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MathMotif type="delta" className="w-6 h-6 text-purple-400" />
+                      <div>
+                        <h3 className="text-xl font-display font-bold text-white">2. Automatic Rescue Remediation</h3>
+                        <p className="text-xs font-mono text-purple-300">Triggers immediately on incorrect quiz selection</p>
+                      </div>
+                    </div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.35, delay: 0.1 }}
+                      className="bg-purple-950/40 border border-purple-900/60 rounded-xl p-4 flex items-start gap-3"
+                    >
+                      <Lightbulb className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5 animate-pulse" />
+                      <div>
+                        <span className="text-xs font-mono font-bold text-purple-300 uppercase">Diagnosed Sign Misunderstanding:</span>
+                        <MathRenderer content="When expanding $-6x - x$, pay attention to factor multiplication: $(-6) \times (-1) = +6$. Don't swap positive constants!" className="text-xs text-slate-200 mt-1" />
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
 
-            {activeStep === 3 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <MathMotif type="angle" className="w-6 h-6 text-emerald-400" />
-                  <div>
-                    <h3 className="text-xl font-display font-bold text-white">3. WAEC & BECE Exam Shortcut Layer</h3>
-                    <p className="text-xs font-mono text-emerald-300">Rapid multiple-choice examination techniques</p>
-                  </div>
-                </div>
-                <div className="bg-emerald-950/40 border border-emerald-900/60 rounded-xl p-4 flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-xs font-mono font-bold text-emerald-300 uppercase">WAEC MCQ Technique:</span>
-                    <MathRenderer content="For $ax^2 + bx + c = 0$, sum of roots is $-\frac{b}{a} = \frac{7}{3}$ and product is $\frac{c}{a} = \frac{2}{3}$. Test options instantly using root products!" className="text-xs text-slate-200 mt-1" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </Card>
+                {activeStep === 3 && (
+                  <motion.div
+                    key="step-3"
+                    initial={{ opacity: 0, x: 24 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -24 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MathMotif type="angle" className="w-6 h-6 text-emerald-400" />
+                      <div>
+                        <h3 className="text-xl font-display font-bold text-white">3. WAEC & BECE Exam Shortcut Layer</h3>
+                        <p className="text-xs font-mono text-emerald-300">Rapid multiple-choice examination techniques</p>
+                      </div>
+                    </div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.35, delay: 0.1 }}
+                      className="bg-emerald-950/40 border border-emerald-900/60 rounded-xl p-4 flex items-start gap-3"
+                    >
+                      <Sparkles className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-xs font-mono font-bold text-emerald-300 uppercase">WAEC MCQ Technique:</span>
+                        <MathRenderer content="For $ax^2 + bx + c = 0$, sum of roots is $-\frac{b}{a} = \frac{7}{3}$ and product is $\frac{c}{a} = \frac{2}{3}$. Test options instantly using root products!" className="text-xs text-slate-200 mt-1" />
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
         </div>
       </section>
 
       {/* Role Navigation Portals Section */}
       <section className="py-20 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
             <h2 className="text-3xl font-display font-extrabold text-white">Mathora Role Portals</h2>
             <p className="text-sm text-slate-400 mt-2">Distinct environments tailored to students, teachers, and parents.</p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Student Notebook Card */}
-            <Card variant="notebook" className="hover:border-amber-500/60 group cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <Badge variant="waec">Student Portal</Badge>
-                <MathMotif type="function" className="w-6 h-6 text-amber-400" />
-              </div>
-              <h3 className="text-lg font-display font-bold text-white">Student Practice Notebook</h3>
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                Interactive SS2 topic browser, step-by-step worked examples, Rescue Mode practice, and timed WAEC mock exams.
-              </p>
-              <Link href="/student/practice" className="mt-4 flex items-center gap-1 text-xs font-mono font-bold text-amber-400 group-hover:translate-x-1 transition-transform">
-                Launch Practice <ChevronRight className="w-4 h-4" />
-              </Link>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.55 }}
+              whileHover={{ y: -8 }}
+            >
+              <Card variant="notebook" className="hover:border-amber-500/60 group cursor-pointer h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <Badge variant="waec">Student Portal</Badge>
+                  <MathMotif type="function" className="w-6 h-6 text-amber-400" />
+                </div>
+                <h3 className="text-lg font-display font-bold text-white">Student Practice Notebook</h3>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Interactive SS2 topic browser, step-by-step worked examples, Rescue Mode practice, and timed WAEC mock exams.
+                </p>
+                <Link href="/student/practice" className="mt-4 flex items-center gap-1 text-xs font-mono font-bold text-amber-400 group-hover:translate-x-1 transition-transform">
+                  Launch Practice <ChevronRight className="w-4 h-4" />
+                </Link>
+              </Card>
+            </motion.div>
 
             {/* Teacher Ledger Card */}
-            <Card variant="ledger" className="hover:border-emerald-500/60 group cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <Badge variant="mastered">Teacher Portal</Badge>
-                <GraduationCap className="w-6 h-6 text-emerald-400" />
-              </div>
-              <h3 className="text-lg font-display font-bold text-white">Teacher Academic Ledger</h3>
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                Create verified teacher classes, generate join codes, assign topic sets, and view real-time student mastery performance.
-              </p>
-              <Link href="/teacher" className="mt-4 flex items-center gap-1 text-xs font-mono font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
-                Open Teacher Dashboard <ChevronRight className="w-4 h-4" />
-              </Link>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.55, delay: 0.12 }}
+              whileHover={{ y: -8 }}
+            >
+              <Card variant="ledger" className="hover:border-emerald-500/60 group cursor-pointer h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <Badge variant="mastered">Teacher Portal</Badge>
+                  <GraduationCap className="w-6 h-6 text-emerald-400" />
+                </div>
+                <h3 className="text-lg font-display font-bold text-white">Teacher Academic Ledger</h3>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Create verified teacher classes, generate join codes, assign topic sets, and view real-time student mastery performance.
+                </p>
+                <Link href="/teacher" className="mt-4 flex items-center gap-1 text-xs font-mono font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
+                  Open Teacher Dashboard <ChevronRight className="w-4 h-4" />
+                </Link>
+              </Card>
+            </motion.div>
 
             {/* Parent Report Card */}
-            <Card variant="report" className="hover:border-amber-600/60 group cursor-pointer">
-              <div className="flex items-center justify-between mb-4">
-                <Badge variant="bece">Parent Dashboard</Badge>
-                <Users className="w-6 h-6 text-amber-400" />
-              </div>
-              <h3 className="text-lg font-display font-bold text-white">Parent Progress Report</h3>
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                Calm, non-gamified child progress overview, weekly study hours, teacher notes, and attention-needed topic alerts.
-              </p>
-              <Link href="/parent" className="mt-4 flex items-center gap-1 text-xs font-mono font-bold text-amber-400 group-hover:translate-x-1 transition-transform">
-                Track Child Progress <ChevronRight className="w-4 h-4" />
-              </Link>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.55, delay: 0.24 }}
+              whileHover={{ y: -8 }}
+            >
+              <Card variant="report" className="hover:border-amber-600/60 group cursor-pointer h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <Badge variant="bece">Parent Dashboard</Badge>
+                  <Users className="w-6 h-6 text-amber-400" />
+                </div>
+                <h3 className="text-lg font-display font-bold text-white">Parent Progress Report</h3>
+                <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  Calm, non-gamified child progress overview, weekly study hours, teacher notes, and attention-needed topic alerts.
+                </p>
+                <Link href="/parent" className="mt-4 flex items-center gap-1 text-xs font-mono font-bold text-amber-400 group-hover:translate-x-1 transition-transform">
+                  Track Child Progress <ChevronRight className="w-4 h-4" />
+                </Link>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -379,10 +468,21 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="mt-auto py-8 bg-slate-900 border-t border-slate-800 text-center text-xs font-mono text-slate-400 relative z-10">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <MathoraMark className="w-5 h-5 text-amber-500" />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.8 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-2"
+          >
+            <motion.div
+              animate={{ rotate: [0, 6, -6, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <MathoraMark className="w-5 h-5 text-amber-500" />
+            </motion.div>
             <span className="font-display font-bold text-white">Mathora WAEC Learning System</span>
-          </div>
+          </motion.div>
           <p>© 2026 Mathora. Built for Nigerian Secondary School Mathematics & Further Mathematics Mastery.</p>
         </div>
       </footer>

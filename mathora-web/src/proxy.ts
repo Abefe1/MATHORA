@@ -3,16 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 // Public routes that don't enforce authentication
 const PUBLIC_ROUTES = ['/', '/login', '/register'];
 
-// Role to path mapping
-const ROLE_PATHS: Record<string, string> = {
-  student: '/student',
-  teacher: '/teacher',
-  parent: '/parent',
-  super_admin: '/admin',
-  content_admin: '/admin',
-};
-
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow static assets, next internal paths, and public routes
@@ -25,7 +16,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Next response
   return NextResponse.next();
 }
 

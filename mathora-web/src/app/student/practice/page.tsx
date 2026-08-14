@@ -9,6 +9,8 @@ import { Question, QuestionOption } from '@/lib/types';
 import { Sparkles, CheckCircle2, XCircle, ArrowRight, RotateCcw, Lightbulb, Award } from 'lucide-react';
 import Link from 'next/link';
 
+import { submitQuestionAttempt } from '@/lib/supabase';
+
 export default function PracticePage() {
   const [currentTopic, setCurrentTopic] = useState(INITIAL_TOPICS[0]);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -28,13 +30,23 @@ export default function PracticePage() {
   const handleSubmitAnswer = () => {
     if (!selectedOption) return;
     setIsAnswerSubmitted(true);
+    const isCorrect = selectedOption.is_correct;
 
-    if (selectedOption.is_correct) {
+    if (isCorrect) {
       setScore((prev) => prev + 1);
     } else {
-      // Trigger Rescue Mode Modal automatically on mistake!
       setShowRescueModal(true);
     }
+
+    submitQuestionAttempt({
+      student_id: 'student-1',
+      question_id: currentQuestion.id,
+      topic_id: currentTopic.id,
+      selected_option: selectedOption.letter,
+      is_correct: isCorrect,
+      time_taken_seconds: 30,
+      rescue_mode_triggered: !isCorrect,
+    });
   };
 
   const handleNextQuestion = () => {

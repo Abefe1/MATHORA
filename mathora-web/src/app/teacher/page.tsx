@@ -5,6 +5,8 @@ import Navbar from '@/components/Navbar';
 import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
 import { GraduationCap, Plus, Users, BarChart2 } from 'lucide-react';
 
+import { createTeacherClassInSupabase } from '@/lib/supabase';
+
 export default function TeacherDashboard() {
   const [showClassModal, setShowClassModal] = useState(false);
   const [newClassName, setNewClassName] = useState('');
@@ -13,17 +15,12 @@ export default function TeacherDashboard() {
     { id: 'c2', name: 'SS2 Further Maths', code: 'FM-SS2B', studentsCount: 28, avgMastery: 81 }
   ]);
 
-  const handleCreateClass = (e: React.FormEvent) => {
+  const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClassName.trim()) return;
-    const newClass = {
-      id: `c-${Date.now()}`,
-      name: newClassName,
-      code: `MATH-${Math.floor(1000 + Math.random() * 9000)}`,
-      studentsCount: 0,
-      avgMastery: 0
-    };
-    setClassList((prev) => [...prev, newClass]);
+    
+    const createdClass = await createTeacherClassInSupabase(newClassName);
+    setClassList((prev) => [...prev, createdClass]);
     setNewClassName('');
     setShowClassModal(false);
   };

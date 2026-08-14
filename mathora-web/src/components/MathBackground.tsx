@@ -31,15 +31,29 @@ export default function MathBackground() {
     window.addEventListener('resize', handleResize);
 
     // Particle Constellation Data (~35 items max for 60fps)
-    const SYMBOLS = ['π', '∑', '∫', '√x', '∞', 'θ', 'Δ', 'λ', 'f(x)'];
-    const particles = Array.from({ length: 35 }, () => ({
-      x: Math.random() * (width || 1200),
-      y: Math.random() * (height || 800),
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-      opacity: Math.random() * 0.25 + 0.1,
-    }));
+    const SYMBOLS = ['π', '∑', '∫', '√x', '∞', 'θ', 'Δ', 'λ', 'f(x)', 'x²', '=', '÷', '½', 'sin θ', '∂', 'x₁'];
+    const COLORS = [
+      '224, 231, 255', // indigo-ish white
+      '253, 224, 138', // amber-300
+      '165, 243, 252', // cyan-200
+      '216, 180, 254', // purple-300
+    ];
+    const particles = Array.from({ length: 30 }, () => {
+      const size = Math.random() * 14 + 13; // 13–27px, much larger & readable
+      return {
+        x: Math.random() * (width || 1200),
+        y: Math.random() * (height || 800),
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        baseOpacity: Math.random() * 0.28 + 0.32, // much more visible: 0.32–0.6
+        size,
+        bobPhase: Math.random() * Math.PI * 2,
+        bobSpeed: Math.random() * 0.6 + 0.4,
+        rotPhase: Math.random() * Math.PI * 2,
+      };
+    });
 
     // Main Draw Function
     const draw = () => {
@@ -144,9 +158,8 @@ export default function MathBackground() {
       ctx.stroke();
       ctx.restore();
 
-      // 4. Constellation Particles & Connecting Lines
+      // 4. Constellation Particles & Connecting Lines — larger, brighter, alive
       ctx.save();
-      ctx.font = '12px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
@@ -154,19 +167,33 @@ export default function MathBackground() {
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
+        let renderX = p.x;
+        let renderY = p.y;
+        let pulse = 1;
+
         if (!prefersReducedMotion) {
           p.x += p.vx;
           p.y += p.vy;
 
-          if (p.x < 0) p.x = width;
-          if (p.x > width) p.x = 0;
-          if (p.y < 0) p.y = height;
-          if (p.y > height) p.y = 0;
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+          if (p.y < -20) p.y = height + 20;
+          if (p.y > height + 20) p.y = -20;
+
+          // Gentle organic bob on top of the drift, plus a slow breathing pulse
+          renderX = p.x + Math.sin(time * p.bobSpeed + p.rotPhase) * 6;
+          renderY = p.y + Math.cos(time * p.bobSpeed * 0.8 + p.bobPhase) * 6;
+          pulse = 0.75 + Math.sin(time * p.bobSpeed + p.bobPhase) * 0.25;
         }
 
-        // Draw Math Symbol / Particle Dot
-        ctx.fillStyle = `rgba(224, 231, 255, ${p.opacity})`;
-        ctx.fillText(p.symbol, p.x, p.y);
+        // Soft glow behind the symbol for legibility against the grid
+        ctx.save();
+        ctx.font = `600 ${p.size}px "JetBrains Mono", ui-monospace, monospace`;
+        ctx.shadowColor = `rgba(${p.color}, 0.55)`;
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = `rgba(${p.color}, ${(p.baseOpacity * pulse).toFixed(3)})`;
+        ctx.fillText(p.symbol, renderX, renderY);
+        ctx.restore();
 
         // Draw Proximity Connections
         for (let j = i + 1; j < particles.length; j++) {
@@ -175,12 +202,12 @@ export default function MathBackground() {
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 110) {
-            const lineOpacity = (1 - dist / 110) * 0.08;
+          if (dist < 130) {
+            const lineOpacity = (1 - dist / 130) * 0.14;
             ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
+            ctx.moveTo(renderX, renderY);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(99, 102, 241, ${lineOpacity})`;
+            ctx.strokeStyle = `rgba(148, 163, 253, ${lineOpacity})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
