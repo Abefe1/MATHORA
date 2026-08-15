@@ -11,136 +11,86 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-export default function SettingsScreen() {
+export default function ProfileScreen() {
   const router = useRouter();
-
-  const [selectedClass, setSelectedClass] = useState('SS2');
-  const [offlineSyncEnabled, setOfflineSyncEnabled] = useState(true);
-  const [examShortcutsEnabled, setExamShortcutsEnabled] = useState(true);
-  const [activeRole, setActiveRole] = useState<'Student' | 'Teacher' | 'Parent'>('Student');
+  const [offlineSync, setOfflineSync] = useState(true);
+  const [darkTheme, setDarkTheme] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'Student' | 'Teacher' | 'Parent'>('Student');
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#090D16" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back to Dashboard</Text>
-        </TouchableOpacity>
-
-        {/* Header */}
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Top Header */}
         <View style={styles.header}>
-          <Text style={styles.badgeText}>PREFERENCES & ACCOUNT</Text>
-          <Text style={styles.title}>App Settings</Text>
-          <Text style={styles.subtitle}>
-            Manage your active class, curriculum target, offline content sync, and role access.
-          </Text>
+          <Text style={styles.title}>Student Profile</Text>
+          <Text style={styles.subtitle}>Account Preferences & Role Portals</Text>
         </View>
 
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>🎓</Text>
+            <Text style={styles.avatarEmoji}>🎓</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.userName}>Chidiebere Okafor</Text>
-            <Text style={styles.userRole}>Active Level: {selectedClass} Mathematics (WAEC 2026)</Text>
-            <Text style={styles.userSchool}>Government Secondary School, Ikeja</Text>
-          </View>
+          <Text style={styles.profileName}>Ahmed Okafor</Text>
+          <Text style={styles.profileLevel}>SS2 Mathematics • WAEC 2026</Text>
+          <Text style={styles.profileSchool}>Federal Government College, Lagos</Text>
         </View>
 
-        {/* Role Switcher */}
+        {/* Role Portal Switcher */}
         <Text style={styles.sectionTitle}>Active Role Portal</Text>
         <View style={styles.roleGrid}>
           {(['Student', 'Teacher', 'Parent'] as const).map((role) => {
-            const isSelected = activeRole === role;
+            const isSelected = selectedRole === role;
             return (
               <TouchableOpacity
                 key={role}
-                style={[styles.roleChip, isSelected && styles.roleChipActive]}
+                style={[styles.roleCard, isSelected && styles.roleCardActive]}
                 onPress={() => {
-                  setActiveRole(role);
+                  setSelectedRole(role);
                   if (role === 'Teacher') router.push('/teacher');
                   if (role === 'Parent') router.push('/parent');
                 }}
               >
-                <Text style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
-                  {role} Portal
-                </Text>
+                <Text style={[styles.roleText, isSelected && styles.roleTextActive]}>{role}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Class Selector */}
-        <Text style={styles.sectionTitle}>Curriculum Level</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Selected Target Class</Text>
-          <View style={styles.classRow}>
-            {['JSS3', 'SS1', 'SS2', 'SS3'].map((cls) => {
-              const isSel = selectedClass === cls;
-              return (
-                <TouchableOpacity
-                  key={cls}
-                  style={[styles.classChip, isSel && styles.classChipActive]}
-                  onPress={() => setSelectedClass(cls)}
-                >
-                  <Text style={[styles.classChipText, isSel && styles.classChipTextActive]}>
-                    {cls}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+        {/* Preferences List */}
+        <Text style={styles.sectionTitle}>App Settings</Text>
 
-        {/* Preferences & Toggles */}
-        <Text style={styles.sectionTitle}>Learning Preferences & Sync</Text>
-
-        <View style={styles.card}>
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={styles.toggleTitle}>Offline Content Cache</Text>
-              <Text style={styles.toggleSub}>
-                Download questions and theory for study without active internet.
-              </Text>
+        <View style={styles.settingsGroup}>
+          <View style={styles.settingRow}>
+            <View>
+              <Text style={styles.settingLabel}>Offline Data Cache</Text>
+              <Text style={styles.settingSub}>Keep questions available without internet</Text>
             </View>
             <Switch
-              value={offlineSyncEnabled}
-              onValueChange={setOfflineSyncEnabled}
-              trackColor={{ false: '#1E293B', true: '#10B981' }}
-              thumbColor={offlineSyncEnabled ? '#FFFFFF' : '#94A3B8'}
+              value={offlineSync}
+              onValueChange={setOfflineSync}
+              trackColor={{ false: '#CBD5E1', true: '#2563EB' }}
             />
           </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={styles.toggleTitle}>WAEC MCQ Exam Shortcuts</Text>
-              <Text style={styles.toggleSub}>
-                Show speed-solving tips automatically after completing questions.
-              </Text>
+          <View style={styles.settingRow}>
+            <View>
+              <Text style={styles.settingLabel}>Dark Theme</Text>
+              <Text style={styles.settingSub}>High-contrast math typesetting</Text>
             </View>
             <Switch
-              value={examShortcutsEnabled}
-              onValueChange={setExamShortcutsEnabled}
-              trackColor={{ false: '#1E293B', true: '#F59E0B' }}
-              thumbColor={examShortcutsEnabled ? '#FFFFFF' : '#94A3B8'}
+              value={darkTheme}
+              onValueChange={setDarkTheme}
+              trackColor={{ false: '#CBD5E1', true: '#2563EB' }}
             />
           </View>
         </View>
 
-        {/* Offline Sync Status */}
-        <View style={styles.syncStatusCard}>
-          <Text style={styles.syncTag}>OFFLINE SYNC STATUS</Text>
-          <Text style={styles.syncTitle}>Local Cache: 42 Topics & 150 Questions</Text>
-          <Text style={styles.syncSub}>Last synchronized: Just now • Ready for offline learning</Text>
-        </View>
-
-        {/* App Info Footer */}
-        <View style={styles.appInfoBox}>
-          <Text style={styles.appInfoTitle}>Mathora Mobile v1.0.0</Text>
-          <Text style={styles.appInfoSub}>Built from a Concerned Teacher's Experience</Text>
+        {/* System Info */}
+        <View style={styles.systemCard}>
+          <Text style={styles.systemText}>Mathora Mobile v2.1.0 • NERDC Aligned</Text>
+          <Text style={styles.systemSub}>Synced with Supabase Backend</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -148,68 +98,70 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  header: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-  },
-  badgeText: { color: '#38BDF8', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', marginTop: 4 },
-  subtitle: { color: '#94A3B8', fontSize: 13, marginTop: 4, lineHeight: 18 },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  header: { marginBottom: 20 },
+  title: { color: '#0F172A', fontSize: 24, fontWeight: '800' },
+  subtitle: { color: '#64748B', fontSize: 13, marginTop: 2 },
   profileCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+  },
+  avatarCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  avatarEmoji: { fontSize: 28 },
+  profileName: { color: '#0F172A', fontSize: 18, fontWeight: '800' },
+  profileLevel: { color: '#2563EB', fontSize: 13, fontWeight: '700', marginTop: 2 },
+  profileSchool: { color: '#64748B', fontSize: 12, marginTop: 4 },
+  sectionTitle: { color: '#0F172A', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  roleGrid: { flexDirection: 'row', gap: 10, marginBottom: 24 },
+  roleCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  roleCardActive: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
+  roleText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
+  roleTextActive: { color: '#2563EB', fontWeight: '700' },
+  settingsGroup: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,
+    marginBottom: 24,
+  },
+  settingRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 18,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  avatarCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#1E1B4B',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderColor: '#4338CA',
-    borderWidth: 1,
-  },
-  avatarText: { fontSize: 24 },
-  userName: { color: '#FFFFFF', fontSize: 17, fontWeight: 'bold' },
-  userRole: { color: '#F59E0B', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  userSchool: { color: '#94A3B8', fontSize: 11, marginTop: 2 },
-  sectionTitle: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  roleGrid: { flexDirection: 'row', gap: 8, marginBottom: 18 },
-  roleChip: { flex: 1, backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
-  roleChipActive: { backgroundColor: '#1E1B4B', borderColor: '#38BDF8' },
-  roleChipText: { color: '#94A3B8', fontSize: 12, fontWeight: '600' },
-  roleChipTextActive: { color: '#38BDF8', fontWeight: 'bold' },
-  card: { backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 18 },
-  cardTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', marginBottom: 12 },
-  classRow: { flexDirection: 'row', gap: 10 },
-  classChip: { flex: 1, backgroundColor: '#1E1B4B33', borderColor: '#312E81', borderWidth: 1, borderRadius: 10, padding: 12, alignItems: 'center' },
-  classChipActive: { backgroundColor: '#78350F', borderColor: '#F59E0B' },
-  classChipText: { color: '#94A3B8', fontSize: 13, fontWeight: 'bold' },
-  classChipTextActive: { color: '#FDE68A' },
-  toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  toggleTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
-  toggleSub: { color: '#94A3B8', fontSize: 11, marginTop: 2, lineHeight: 16 },
-  divider: { height: 1, backgroundColor: '#1E293B', marginVertical: 14 },
-  syncStatusCard: { backgroundColor: '#064E3B22', borderColor: '#059669', borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 20 },
-  syncTag: { color: '#34D399', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  syncTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', marginTop: 4 },
-  syncSub: { color: '#A7F3D0', fontSize: 12, marginTop: 2 },
-  appInfoBox: { alignItems: 'center', marginTop: 10, paddingBottom: 20 },
-  appInfoTitle: { color: '#64748B', fontSize: 13, fontWeight: 'bold' },
-  appInfoSub: { color: '#475569', fontSize: 11, marginTop: 2 },
+  settingLabel: { color: '#0F172A', fontSize: 14, fontWeight: '700' },
+  settingSub: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  systemCard: { alignItems: 'center', marginTop: 12 },
+  systemText: { color: '#94A3B8', fontSize: 12, fontWeight: '600' },
+  systemSub: { color: '#CBD5E1', fontSize: 11, marginTop: 2 },
 });

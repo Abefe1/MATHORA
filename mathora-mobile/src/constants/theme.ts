@@ -1,56 +1,63 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-import '@/global.css';
-
 import { Platform } from 'react-native';
 
-export const Colors = {
+export const ThemeTokens = {
+  // Brand Tokens
+  brandNavy: '#172554',
+  brandBlue: '#2563EB',
+  brandLight: '#EFF6FF',
+  sky: '#38BDF8',
+
+  // Learning State & Semantic Tokens
+  mint: '#10B981',        // Mastered / Success
+  amber: '#F59E0B',       // XP / Attention / Needs Practice
+  coral: '#F97316',       // Challenges / Streak
+  red: '#EF4444',         // Error / Mistake
+
+  // Light Mode Defaults
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    background: '#F8FAFC',
+    surface: '#FFFFFF',
+    surfaceSecondary: '#F1F5F9',
+    border: '#E2E8F0',
+    text: '#0F172A',
+    textMuted: '#64748B',
+    primary: '#2563EB',
+    headerBg: '#172554',
   },
+
+  // Dark Mode Defaults
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    background: '#0B1120',
+    surface: '#111827',
+    surfaceSecondary: '#1E293B',
+    border: '#334155',
+    text: '#F8FAFC',
+    textMuted: '#94A3B8',
+    primary: '#3B82F6',
+    headerBg: '#0F172A',
   },
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export const Radius = {
+  card: 16,
+  button: 10,
+  input: 10,
+  hero: 20,
+  pill: 999,
+} as const;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export const Typography = {
+  display: { fontSize: 36, fontWeight: '800' as const, lineHeight: 44 },
+  h1: { fontSize: 28, fontWeight: '800' as const, lineHeight: 36 },
+  h2: { fontSize: 22, fontWeight: '700' as const, lineHeight: 30 },
+  h3: { fontSize: 18, fontWeight: '700' as const, lineHeight: 26 },
+  body: { fontSize: 15, fontWeight: '400' as const, lineHeight: 22 },
+  bodyBold: { fontSize: 15, fontWeight: '600' as const, lineHeight: 22 },
+  small: { fontSize: 13, fontWeight: '500' as const, lineHeight: 18 },
+  caption: { fontSize: 11, fontWeight: '600' as const, lineHeight: 16 },
+} as const;
 
+export const Colors = ThemeTokens;
 export const Spacing = {
   half: 2,
   one: 4,

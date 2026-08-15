@@ -1,122 +1,153 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, Modal } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Modal,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function PracticeScreen() {
   const router = useRouter();
+
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showRescueModal, setShowRescueModal] = useState(false);
+  const [showMistakeModal, setShowMistakeModal] = useState(false);
 
   const question = {
-    title: 'Quadratic Factorization',
-    text: 'Solve for x: 3x² - 7x + 2 = 0',
-    latexText: 'Identify linear factors (ax + b)(cx + d) = 0 where ac = 6 and sum = -7.',
+    title: 'Quadratic Equations',
+    index: 4,
+    total: 10,
+    equation: 'x² - 5x + 6 = 0',
     options: [
-      { letter: 'A', text: 'x = 1/3  or  x = 2', isCorrect: true },
-      { letter: 'B', text: 'x = -1/3  or  x = -2', isCorrect: false },
-      { letter: 'C', text: 'x = 3  or  x = 1/2', isCorrect: false },
-      { letter: 'D', text: 'x = -3  or  x = 2', isCorrect: false },
+      { id: 'opt-a', letter: 'A', text: 'x = 2 or x = 3', isCorrect: true },
+      { id: 'opt-b', letter: 'B', text: 'x = -2 or x = -3', isCorrect: false },
+      { id: 'opt-c', letter: 'C', text: 'x = 1 or x = 6', isCorrect: false },
+      { id: 'opt-d', letter: 'D', text: 'x = -1 or x = -6', isCorrect: false },
     ],
-    shortcut: 'WAEC MCQ Tip: Product of roots = c/a = 2/3. Product of (1/3) × 2 = 2/3 instantly verifies Option A!',
   };
 
-  const handleSelect = (letter: string) => {
-    if (isSubmitted) return;
-    setSelectedOption(letter);
-  };
-
-  const handleSubmit = () => {
+  const handleCheckAnswer = () => {
     if (!selectedOption) return;
     setIsSubmitted(true);
-    const chosen = question.options.find((o) => o.letter === selectedOption);
+    const chosen = question.options.find((o) => o.id === selectedOption);
     if (!chosen?.isCorrect) {
-      setShowRescueModal(true);
+      setShowMistakeModal(true);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Top Header */}
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back to Dashboard</Text>
+          <Text style={styles.backText}>← {question.title}</Text>
         </TouchableOpacity>
 
-        <View style={styles.topicHeader}>
-          <Text style={styles.topicTag}>PRACTICE SESSION</Text>
-          <Text style={styles.topicTitle}>{question.title}</Text>
-        </View>
+        {/* Progress Counter */}
+        <Text style={styles.questionIndexText}>Question {question.index} of {question.total}</Text>
 
-        {/* Question Card */}
-        <View style={styles.questionCard}>
-          <Text style={styles.questionText}>{question.text}</Text>
-          <View style={styles.latexBox}>
-            <Text style={styles.latexContent}>{question.latexText}</Text>
+        {/* Question Area with Generous Whitespace & Crisp Typography */}
+        <View style={styles.questionContainer}>
+          <Text style={styles.solveLabelText}>Solve:</Text>
+          <View style={styles.equationCard}>
+            <Text style={styles.equationText}>{question.equation}</Text>
           </View>
         </View>
 
-        {/* Options */}
-        <Text style={styles.sectionSubtitle}>Select Answer Choice:</Text>
-        {question.options.map((opt) => {
-          const isSelected = selectedOption === opt.letter;
-          return (
-            <TouchableOpacity
-              key={opt.letter}
-              style={[
-                styles.optionCard,
-                isSelected && styles.optionSelected,
-                isSubmitted && opt.isCorrect && styles.optionCorrect,
-                isSubmitted && isSelected && !opt.isCorrect && styles.optionIncorrect,
-              ]}
-              onPress={() => handleSelect(opt.letter)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.optionLetter}>{opt.letter}</Text>
-              <Text style={styles.optionText}>{opt.text}</Text>
-            </TouchableOpacity>
-          );
-        })}
+        {/* Radio Option Choices */}
+        <View style={styles.optionsList}>
+          {question.options.map((opt) => {
+            const isSelected = selectedOption === opt.id;
+            const isCorrect = opt.isCorrect;
 
-        {/* Submit Button */}
+            return (
+              <TouchableOpacity
+                key={opt.id}
+                style={[
+                  styles.optionCard,
+                  isSelected && styles.optionCardSelected,
+                  isSubmitted && isSelected && isCorrect && styles.optionCardCorrect,
+                  isSubmitted && isSelected && !isCorrect && styles.optionCardIncorrect,
+                ]}
+                onPress={() => {
+                  if (!isSubmitted) setSelectedOption(opt.id);
+                }}
+                activeOpacity={0.85}
+              >
+                <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                  {isSelected && <View style={styles.radioInnerDot} />}
+                </View>
+                <Text style={styles.optionText}>{opt.text}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Check Answer Primary Action Button */}
         {!isSubmitted ? (
-          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} activeOpacity={0.8}>
-            <Text style={styles.submitBtnText}>Submit Answer</Text>
+          <TouchableOpacity
+            style={[styles.checkBtn, !selectedOption && styles.checkBtnDisabled]}
+            onPress={handleCheckAnswer}
+            disabled={!selectedOption}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.checkBtnText}>Check answer</Text>
           </TouchableOpacity>
         ) : (
-          <View style={styles.shortcutBox}>
-            <Text style={styles.shortcutTitle}>⚡ WAEC EXAM SHORTCUT</Text>
-            <Text style={styles.shortcutText}>{question.shortcut}</Text>
+          <View style={styles.submittedBox}>
+            <TouchableOpacity
+              style={styles.nextQuestionBtn}
+              onPress={() => {
+                setSelectedOption(null);
+                setIsSubmitted(false);
+              }}
+            >
+              <Text style={styles.nextQuestionBtnText}>Next Question →</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
 
-      {/* Rescue Mode Remediation Modal */}
-      <Modal visible={showRescueModal} animationType="slide" transparent>
+      {/* Mistake Analysis Modal: "Let's find the mistake." */}
+      <Modal visible={showMistakeModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.rescueBadge}>RESCUE MODE ACTIVATED</Text>
-            <Text style={styles.modalTitle}>Step-by-step Remediation</Text>
+            <Text style={styles.mistakeHeaderTag}>MISTAKE ANALYSIS</Text>
+            <Text style={styles.mistakeTitle}>Not quite.</Text>
+            <Text style={styles.userAnswerText}>Your answer: x = -2, -3</Text>
+            <Text style={styles.issueText}>The issue is the signs.</Text>
 
-            <View style={styles.mistakeBox}>
-              <Text style={styles.mistakeTitle}>Diagnosed Error Pattern:</Text>
-              <Text style={styles.mistakeText}>
-                When expanding -6x - x, remember: (-6) × (-1) = +6. Pay close attention to negative signs!
+            {/* Explanation Breakdown */}
+            <View style={styles.breakdownCard}>
+              <Text style={styles.breakdownStep}>Remember:</Text>
+              <Text style={styles.breakdownMath}>x² - 5x + 6 = (x - 2)(x - 3)</Text>
+              <Text style={styles.breakdownStep}>So:</Text>
+              <Text style={styles.breakdownMathBold}>x = 2  or  x = 3</Text>
+            </View>
+
+            {/* 💡 Remember Callout Box */}
+            <View style={styles.rememberCallout}>
+              <Text style={styles.rememberTitle}>💡 Remember</Text>
+              <Text style={styles.rememberBody}>
+                When multiplying two negative numbers, the result is positive. (-2) × (-3) = +6 while (-2) + (-3) = -5.
               </Text>
             </View>
 
-            <View style={styles.solutionBox}>
-              <Text style={styles.solutionTitle}>Worked Solution:</Text>
-              <Text style={styles.solutionText}>
-                1. 3x² - 6x - x + 2 = 0{'\n'}
-                2. 3x(x - 2) - 1(x - 2) = 0{'\n'}
-                3. (3x - 1)(x - 2) = 0{'\n'}
-                4. x = 1/3 or x = 2
-              </Text>
-            </View>
-
-            <TouchableOpacity style={styles.closeModalBtn} onPress={() => setShowRescueModal(false)}>
-              <Text style={styles.closeModalText}>I Understand Now — Retry</Text>
+            <TouchableOpacity
+              style={styles.trySimilarBtn}
+              onPress={() => {
+                setShowMistakeModal(false);
+                setSelectedOption(null);
+                setIsSubmitted(false);
+              }}
+            >
+              <Text style={styles.trySimilarBtnText}>Try a similar question</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -126,75 +157,232 @@ export default function PracticeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  topicHeader: { marginBottom: 16 },
-  topicTag: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  topicTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: 'bold', marginTop: 2 },
-  questionCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  backBtn: {
+    marginBottom: 16,
+  },
+  backText: {
+    color: '#2563EB',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  questionIndexText: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  questionContainer: {
+    marginBottom: 24,
+  },
+  solveLabelText: {
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  equationCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderWidth: 1,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
   },
-  questionText: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
-  latexBox: { backgroundColor: '#1E1B4B', padding: 12, borderRadius: 8, marginTop: 10 },
-  latexContent: { color: '#C7D2FE', fontSize: 13, fontFamily: 'monospace' },
-  sectionSubtitle: { color: '#94A3B8', fontSize: 12, fontWeight: 'bold', marginBottom: 10 },
+  equationText: {
+    color: '#0F172A',
+    fontSize: 26,
+    fontWeight: '800',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  optionsList: {
+    gap: 12,
+    marginBottom: 28,
+  },
   optionCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderWidth: 1,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    gap: 14,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
   },
-  optionSelected: { borderColor: '#F59E0B', backgroundColor: '#78350F22' },
-  optionCorrect: { borderColor: '#10B981', backgroundColor: '#064E3B44' },
-  optionIncorrect: { borderColor: '#EF4444', backgroundColor: '#7F1D1D44' },
-  optionLetter: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold', width: 28 },
-  optionText: { color: '#FFFFFF', fontSize: 15, fontWeight: '500' },
-  submitBtn: {
-    backgroundColor: '#F59E0B',
-    borderRadius: 12,
-    padding: 16,
+  optionCardSelected: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
+  },
+  optionCardCorrect: {
+    borderColor: '#10B981',
+    backgroundColor: '#ECFDF5',
+  },
+  optionCardIncorrect: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#94A3B8',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
   },
-  submitBtnText: { color: '#090D16', fontSize: 16, fontWeight: 'bold' },
-  shortcutBox: {
-    backgroundColor: '#064E3B33',
-    borderColor: '#059669',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 10,
+  radioCircleSelected: {
+    borderColor: '#2563EB',
   },
-  shortcutTitle: { color: '#34D399', fontSize: 11, fontWeight: 'bold' },
-  shortcutText: { color: '#ECFDF5', fontSize: 13, marginTop: 4 },
-  modalOverlay: { flex: 1, backgroundColor: '#000000AA', justifyContent: 'flex-end' },
+  radioInnerDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#2563EB',
+  },
+  optionText: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  checkBtn: {
+    backgroundColor: '#2563EB',
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  checkBtnDisabled: {
+    backgroundColor: '#94A3B8',
+    opacity: 0.6,
+  },
+  checkBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  submittedBox: {
+    alignItems: 'center',
+  },
+  nextQuestionBtn: {
+    backgroundColor: '#10B981',
+    borderRadius: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    width: '100%',
+  },
+  nextQuestionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000088',
+    justifyContent: 'flex-end',
+  },
   modalContent: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
+    borderTopWidth: 3,
     borderColor: '#EF4444',
-    borderTopWidth: 2,
   },
-  rescueBadge: { color: '#EF4444', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  modalTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold', marginTop: 4, marginBottom: 16 },
-  mistakeBox: { backgroundColor: '#7F1D1D33', padding: 12, borderRadius: 12, marginBottom: 12 },
-  mistakeTitle: { color: '#FCA5A5', fontSize: 12, fontWeight: 'bold' },
-  mistakeText: { color: '#FEE2E2', fontSize: 13, marginTop: 2 },
-  solutionBox: { backgroundColor: '#1E1B4B', padding: 12, borderRadius: 12, marginBottom: 20 },
-  solutionTitle: { color: '#C7D2FE', fontSize: 12, fontWeight: 'bold' },
-  solutionText: { color: '#FFFFFF', fontSize: 13, marginTop: 4, lineHeight: 20, fontFamily: 'monospace' },
-  closeModalBtn: { backgroundColor: '#10B981', borderRadius: 12, padding: 14, alignItems: 'center' },
-  closeModalText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
+  mistakeHeaderTag: {
+    color: '#EF4444',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  mistakeTitle: {
+    color: '#0F172A',
+    fontSize: 24,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+  userAnswerText: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  issueText: {
+    color: '#64748B',
+    fontSize: 14,
+    marginTop: 2,
+    marginBottom: 16,
+  },
+  breakdownCard: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  breakdownStep: {
+    color: '#64748B',
+    fontSize: 12,
+    marginVertical: 2,
+  },
+  breakdownMath: {
+    color: '#0F172A',
+    fontSize: 15,
+    fontFamily: 'monospace',
+    fontWeight: '600',
+    marginVertical: 2,
+  },
+  breakdownMathBold: {
+    color: '#10B981',
+    fontSize: 15,
+    fontFamily: 'monospace',
+    fontWeight: '800',
+    marginVertical: 2,
+  },
+  rememberCallout: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+  },
+  rememberTitle: {
+    color: '#1D4ED8',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  rememberBody: {
+    color: '#1E40AF',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  trySimilarBtn: {
+    backgroundColor: '#2563EB',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  trySimilarBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

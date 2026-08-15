@@ -11,13 +11,12 @@ import { Pressable, View, StyleSheet, Text } from 'react-native';
 export default function AppTabs() {
   return (
     <View style={styles.pageBackgroundContainer}>
-      {/* Sleek Ambient Glow Backdrop */}
-      <View style={styles.ambientGlowTop} />
-      <View style={styles.ambientGlowBottom} />
+      {/* Subtle Mathematical Coordinate Grid Motif */}
+      <View style={styles.mathGridPattern} />
 
-      {/* Main Luxury Mobile Phone Frame */}
+      {/* Sleek Mobile Device Container */}
       <View style={styles.mobilePhoneDevice}>
-        {/* Dynamic Island / Speaker Notch Header */}
+        {/* Notch Status Bar Header */}
         <View style={styles.notchHeaderBar}>
           <View style={styles.dynamicIslandNotch}>
             <View style={styles.cameraLens} />
@@ -27,23 +26,23 @@ export default function AppTabs() {
 
         {/* Mobile Viewport Screen */}
         <Tabs style={styles.mobileViewportTabContainer}>
-          <TabSlot style={{ flex: 1, backgroundColor: '#030712' }} />
+          <TabSlot style={{ flex: 1, backgroundColor: '#F8FAFC' }} />
           <TabList asChild>
             <CustomTabList>
               <TabTrigger name="home" href="/" asChild>
-                <TabButton icon="⚡">Home</TabButton>
+                <TabButton icon="🏠">Home</TabButton>
               </TabTrigger>
               <TabTrigger name="explore" href="/explore" asChild>
-                <TabButton icon="📚">Topics</TabButton>
+                <TabButton icon="📖">Learn</TabButton>
+              </TabTrigger>
+              <TabTrigger name="practice" href="/practice" asChild>
+                <TabButton icon="✏️">Practice</TabButton>
               </TabTrigger>
               <TabTrigger name="squads" href="/squads" asChild>
-                <TabButton icon="👥">Squads</TabButton>
-              </TabTrigger>
-              <TabTrigger name="mock-exam" href="/mock-exam" asChild>
-                <TabButton icon="⏱️">Mock</TabButton>
+                <TabButton icon="📊">Progress</TabButton>
               </TabTrigger>
               <TabTrigger name="settings" href="/settings" asChild>
-                <TabButton icon="⚙️">Settings</TabButton>
+                <TabButton icon="👤">Profile</TabButton>
               </TabTrigger>
             </CustomTabList>
           </TabList>
@@ -62,7 +61,7 @@ export function TabButton({ children, icon, isFocused, ...props }: TabTriggerSlo
   return (
     <Pressable {...props} style={({ pressed }) => [styles.tabItemFlex, pressed && styles.pressedTab]}>
       <View style={[styles.tabButtonView, isFocused && styles.tabButtonActive]}>
-        <Text style={styles.tabIconEmoji}>{icon}</Text>
+        <Text style={[styles.tabIconEmoji, isFocused && styles.tabIconActive]}>{icon}</Text>
         <Text style={[styles.tabLabelText, isFocused && styles.tabLabelTextActive]}>
           {children}
         </Text>
@@ -74,7 +73,7 @@ export function TabButton({ children, icon, isFocused, ...props }: TabTriggerSlo
 export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListWrapper}>
-      <View style={styles.glassTabContainer}>
+      <View style={styles.cleanTabContainer}>
         {props.children}
       </View>
     </View>
@@ -84,94 +83,82 @@ export function CustomTabList(props: TabListProps) {
 const styles = StyleSheet.create({
   pageBackgroundContainer: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: '#0F172A',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 12,
     position: 'relative',
   },
-  ambientGlowTop: {
+  mathGridPattern: {
     position: 'absolute',
-    top: -100,
-    left: '25%',
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: '#4338CA',
-    opacity: 0.15,
-  },
-  ambientGlowBottom: {
-    position: 'absolute',
-    bottom: -100,
-    right: '25%',
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: '#F59E0B',
-    opacity: 0.12,
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    opacity: 0.04,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   mobilePhoneDevice: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 430,
     height: '100%',
-    maxHeight: 880,
-    backgroundColor: '#030712',
-    borderRadius: 44,
-    borderWidth: 10,
+    maxHeight: 890,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 40,
+    borderWidth: 8,
     borderColor: '#1E293B',
     overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.95,
-    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.5,
+    shadowRadius: 28,
     position: 'relative',
   },
   notchHeaderBar: {
     height: 36,
-    backgroundColor: '#030712',
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 22,
     borderBottomWidth: 1,
-    borderColor: '#0F172A',
+    borderColor: '#E2E8F0',
     zIndex: 10,
   },
   dynamicIslandNotch: {
-    width: 80,
-    height: 18,
+    width: 76,
+    height: 16,
     backgroundColor: '#0F172A',
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderColor: '#1E293B',
-    borderWidth: 1,
   },
   cameraLens: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#020617',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#172554',
   },
   deviceTimeText: {
-    color: '#94A3B8',
+    color: '#0F172A',
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   mobileViewportTabContainer: {
     flex: 1,
-    backgroundColor: '#030712',
+    backgroundColor: '#F8FAFC',
   },
   tabListWrapper: {
     width: '100%',
-    backgroundColor: '#090D16EE',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: '#E2E8F0',
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 6,
   },
-  glassTabContainer: {
+  cleanTabContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -187,17 +174,19 @@ const styles = StyleSheet.create({
   tabButtonView: {
     alignItems: 'center',
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    borderRadius: 10,
     backgroundColor: 'transparent',
   },
   tabButtonActive: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 1,
+    backgroundColor: '#EFF6FF',
   },
   tabIconEmoji: {
     fontSize: 16,
+    opacity: 0.7,
+  },
+  tabIconActive: {
+    opacity: 1,
   },
   tabLabelText: {
     color: '#64748B',
@@ -206,19 +195,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   tabLabelTextActive: {
-    color: '#F59E0B',
-    fontWeight: 'bold',
+    color: '#2563EB',
+    fontWeight: '700',
   },
   bottomHomeBarArea: {
-    height: 18,
-    backgroundColor: '#030712',
+    height: 16,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   homeBarLine: {
-    width: 130,
+    width: 120,
     height: 4,
-    backgroundColor: '#334155',
+    backgroundColor: '#94A3B8',
     borderRadius: 2,
   },
 });

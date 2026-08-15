@@ -6,153 +6,135 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  StatusBar,
   Modal,
   TextInput,
-  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { STUDY_SQUADS_DATA, StudySquad } from '@/services/dataService';
 
-export default function SquadsScreen() {
+export default function ProgressScreen() {
   const router = useRouter();
-  const [squads, setSquads] = useState<StudySquad[]>(STUDY_SQUADS_DATA);
+  const [squads] = useState<StudySquad[]>(STUDY_SQUADS_DATA);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
-  const [joinedSuccess, setJoinedSuccess] = useState<string | null>(null);
-
-  const handleJoinSquad = () => {
-    if (!joinCode.trim()) return;
-    setJoinedSuccess(`Successfully joined squad with code: ${joinCode.toUpperCase()}`);
-    setTimeout(() => {
-      setShowJoinModal(false);
-      setJoinCode('');
-      setJoinedSuccess(null);
-    }, 1500);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#090D16" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back to Dashboard</Text>
-        </TouchableOpacity>
-
-        {/* Header */}
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Top Header */}
         <View style={styles.header}>
-          <Text style={styles.badgeText}>STUDENT ACCOUNTABILITY SQUADS</Text>
-          <Text style={styles.title}>WAEC Study Squads</Text>
-          <Text style={styles.subtitle}>
-            Self-organized student study groups, weekly question targets, and global rank leaderboards.
-          </Text>
+          <Text style={styles.pageTitle}>Your Mathematics</Text>
+          <Text style={styles.pageSub}>Mastery Index & Squad Leaderboard</Text>
         </View>
 
-        {/* Quick Actions Row */}
-        <View style={styles.actionRow}>
+        {/* Hero Mastery Metric Card */}
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryLabel}>Overall Mastery</Text>
+          <View style={styles.masteryScoreRow}>
+            <Text style={styles.masteryPercent}>76%</Text>
+            <View style={styles.growthBadge}>
+              <Text style={styles.growthBadgeText}>↑ +8% this week</Text>
+            </View>
+          </View>
+          <View style={styles.masteryBarTrack}>
+            <View style={[styles.masteryBarFill, { width: '76%' }]} />
+          </View>
+        </View>
+
+        {/* Strong Areas vs Needs Practice Grid */}
+        <View style={styles.masteryBreakdownGrid}>
+          {/* Strong Areas */}
+          <View style={styles.breakdownBoxMint}>
+            <Text style={styles.breakdownHeaderMint}>Strong areas</Text>
+            <View style={styles.itemList}>
+              <Text style={styles.itemTextMint}>✓ Number</Text>
+              <Text style={styles.itemTextMint}>✓ Algebra</Text>
+              <Text style={styles.itemTextMint}>✓ Statistics</Text>
+            </View>
+          </View>
+
+          {/* Needs Practice */}
+          <View style={styles.breakdownBoxAmber}>
+            <Text style={styles.breakdownHeaderAmber}>Needs practice</Text>
+            <View style={styles.itemList}>
+              <Text style={styles.itemTextAmber}>⚠ Geometry</Text>
+              <Text style={styles.itemTextAmber}>⚠ Trigonometry</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Recommended Next Card */}
+        <Text style={styles.sectionTitle}>Recommended next</Text>
+        <View style={styles.recommendedCard}>
+          <View style={styles.recommendedHeader}>
+            <Text style={styles.recommendedTitle}>Completing the square</Text>
+            <Text style={styles.recommendedPrereq}>Prerequisite: Algebra</Text>
+          </View>
+
           <TouchableOpacity
-            style={styles.joinBtn}
-            onPress={() => setShowJoinModal(true)}
-            activeOpacity={0.8}
+            style={styles.practiseBtn}
+            onPress={() => router.push('/practice')}
+            activeOpacity={0.88}
           >
-            <Text style={styles.joinBtnText}>+ Join Squad with Code</Text>
+            <Text style={styles.practiseBtnText}>Practise</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>Your Active Squads ({squads.length})</Text>
+        {/* Study Squads & Leaderboard Section */}
+        <View style={styles.squadHeaderRow}>
+          <Text style={styles.sectionTitle}>WAEC Study Squads</Text>
+          <TouchableOpacity onPress={() => setShowJoinModal(true)}>
+            <Text style={styles.joinLinkText}>+ Join Squad</Text>
+          </TouchableOpacity>
+        </View>
 
-        {squads.map((squad) => {
-          const progressPercent = Math.min(
-            100,
-            Math.round((squad.weekly_progress_questions / squad.weekly_goal_questions) * 100)
-          );
-
-          return (
-            <View key={squad.id} style={styles.squadCard}>
-              <View style={styles.squadHeaderRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.squadFocusBadge}>{squad.exam_focus}</Text>
-                  <Text style={styles.squadName}>{squad.name}</Text>
-                </View>
-                <View style={styles.rankBadge}>
-                  <Text style={styles.rankText}>RANK #{squad.rank_position}</Text>
-                </View>
+        {squads.map((squad) => (
+          <View key={squad.id} style={styles.squadCard}>
+            <View style={styles.squadTopRow}>
+              <View>
+                <Text style={styles.squadFocus}>{squad.exam_focus}</Text>
+                <Text style={styles.squadName}>{squad.name}</Text>
               </View>
-
-              {/* Weekly Goal Progress */}
-              <View style={styles.goalBox}>
-                <View style={styles.goalHeaderRow}>
-                  <Text style={styles.goalLabel}>Weekly Squad Target:</Text>
-                  <Text style={styles.goalValue}>
-                    {squad.weekly_progress_questions} / {squad.weekly_goal_questions} Questions
-                  </Text>
-                </View>
-                <View style={styles.progressBg}>
-                  <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
-                </View>
+              <View style={styles.rankBadge}>
+                <Text style={styles.rankText}>RANK #{squad.rank_position}</Text>
               </View>
-
-              {/* Announcement Feed */}
-              {squad.recent_announcement && (
-                <View style={styles.announcementCard}>
-                  <Text style={styles.announcementTag}>SQUAD ANNOUNCEMENT</Text>
-                  <Text style={styles.announcementText}>{squad.recent_announcement}</Text>
-                </View>
-              )}
-
-              {/* Leaderboard */}
-              <Text style={styles.leaderboardTitle}>🏆 Top Squad Contributors This Week</Text>
-              <View style={styles.leaderboardContainer}>
-                {squad.top_members.map((member, idx) => (
-                  <View key={idx} style={styles.memberRow}>
-                    <Text style={styles.avatarText}>{member.avatar}</Text>
-                    <Text style={styles.memberName}>{member.name}</Text>
-                    <Text style={styles.memberScore}>{member.score} Qs</Text>
-                  </View>
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={styles.squadActionBtn}
-                onPress={() => router.push('/practice')}
-              >
-                <Text style={styles.squadActionBtnText}>⚡ Solve Questions for Squad (+10 XP)</Text>
-              </TouchableOpacity>
             </View>
-          );
-        })}
+
+            {/* Leaderboard */}
+            <View style={styles.leaderboardBox}>
+              <Text style={styles.leaderboardTitle}>Squad Contributor Rankings</Text>
+              {squad.top_members.map((m, idx) => (
+                <View key={idx} style={styles.memberRow}>
+                  <Text style={styles.memberAvatar}>{m.avatar}</Text>
+                  <Text style={styles.memberName}>{m.name}</Text>
+                  <Text style={styles.memberScore}>{m.score} Qs</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
       {/* Join Squad Modal */}
       <Modal visible={showJoinModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalBadge}>ENTER SQUAD CODE</Text>
             <Text style={styles.modalTitle}>Join Study Squad</Text>
-
-            {joinedSuccess ? (
-              <View style={styles.successBox}>
-                <Text style={styles.successText}>{joinedSuccess}</Text>
-              </View>
-            ) : (
-              <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. WARRIOR-2026"
-                  placeholderTextColor="#64748B"
-                  value={joinCode}
-                  onChangeText={setJoinCode}
-                  autoCapitalize="characters"
-                />
-
-                <TouchableOpacity style={styles.submitModalBtn} onPress={handleJoinSquad}>
-                  <Text style={styles.submitModalText}>Confirm & Join Squad</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setShowJoinModal(false)}>
-                  <Text style={styles.cancelModalText}>Cancel</Text>
-                </TouchableOpacity>
-              </>
-            )}
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. WARRIOR-2026"
+              placeholderTextColor="#94A3B8"
+              value={joinCode}
+              onChangeText={setJoinCode}
+            />
+            <TouchableOpacity
+              style={styles.modalSubmitBtn}
+              onPress={() => setShowJoinModal(false)}
+            >
+              <Text style={styles.modalSubmitBtnText}>Join Squad</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -161,101 +143,238 @@ export default function SquadsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
   header: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
+    marginBottom: 20,
+  },
+  pageTitle: {
+    color: '#0F172A',
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  pageSub: {
+    color: '#64748B',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  masteryCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 16,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
   },
-  badgeText: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', marginTop: 4 },
-  subtitle: { color: '#94A3B8', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  actionRow: { marginBottom: 16 },
-  joinBtn: {
-    backgroundColor: '#F59E0B',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
+  masteryLabel: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '600',
   },
-  joinBtnText: { color: '#090D16', fontSize: 15, fontWeight: 'bold' },
-  sectionTitle: { color: '#F8FAFC', fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
-  squadCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+  masteryScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 12,
+    marginVertical: 8,
+  },
+  masteryPercent: {
+    color: '#0F172A',
+    fontSize: 36,
+    fontWeight: '800',
+  },
+  growthBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  growthBadgeText: {
+    color: '#10B981',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  masteryBarTrack: {
+    height: 8,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  masteryBarFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 999,
+  },
+  masteryBreakdownGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  breakdownBoxMint: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#A7F3D0',
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 16,
+    padding: 16,
+  },
+  breakdownHeaderMint: {
+    color: '#10B981',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  breakdownBoxAmber: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FDE68A',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+  },
+  breakdownHeaderAmber: {
+    color: '#F59E0B',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  itemList: {
+    gap: 6,
+  },
+  itemTextMint: {
+    color: '#0F172A',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  itemTextAmber: {
+    color: '#0F172A',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  recommendedCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+  },
+  recommendedHeader: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  recommendedTitle: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  recommendedPrereq: {
+    color: '#64748B',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  practiseBtn: {
+    backgroundColor: '#2563EB',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  practiseBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  squadHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  joinLinkText: {
+    color: '#2563EB',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  squadCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
   },
-  squadHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  squadFocusBadge: { color: '#38BDF8', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  squadName: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 },
-  rankBadge: { backgroundColor: '#78350F', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  rankText: { color: '#FDE68A', fontSize: 10, fontWeight: 'bold' },
-  goalBox: { marginTop: 14, backgroundColor: '#1E1B4B44', borderRadius: 10, padding: 12 },
-  goalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  goalLabel: { color: '#94A3B8', fontSize: 12 },
-  goalValue: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold' },
-  progressBg: { height: 6, backgroundColor: '#1E293B', borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#F59E0B', borderRadius: 3 },
-  announcementCard: {
-    backgroundColor: '#064E3B22',
-    borderColor: '#059669',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 12,
+  squadTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  announcementTag: { color: '#34D399', fontSize: 10, fontWeight: 'bold' },
-  announcementText: { color: '#ECFDF5', fontSize: 12, marginTop: 4, lineHeight: 16 },
-  leaderboardTitle: { color: '#C7D2FE', fontSize: 13, fontWeight: 'bold', marginTop: 14, marginBottom: 8 },
-  leaderboardContainer: { backgroundColor: '#1E1B4B33', borderRadius: 10, padding: 10 },
-  memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderColor: '#1E293B' },
-  avatarText: { fontSize: 16, marginRight: 8 },
-  memberName: { color: '#FFFFFF', fontSize: 13, flex: 1, fontWeight: '600' },
-  memberScore: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold' },
-  squadActionBtn: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    marginTop: 14,
+  squadFocus: {
+    color: '#2563EB',
+    fontSize: 11,
+    fontWeight: '700',
   },
-  squadActionBtnText: { color: '#38BDF8', fontSize: 13, fontWeight: 'bold' },
-  modalOverlay: { flex: 1, backgroundColor: '#000000AA', justifyContent: 'flex-end' },
-  modalContent: {
-    backgroundColor: '#0F172A',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    borderColor: '#F59E0B',
-    borderTopWidth: 2,
-  },
-  modalBadge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  modalTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold', marginTop: 4, marginBottom: 16 },
-  input: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 14,
-    color: '#FFFFFF',
+  squadName: {
+    color: '#0F172A',
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontWeight: '800',
   },
-  submitModalBtn: { backgroundColor: '#F59E0B', borderRadius: 12, padding: 14, alignItems: 'center' },
-  submitModalText: { color: '#090D16', fontSize: 15, fontWeight: 'bold' },
-  cancelModalBtn: { marginTop: 10, padding: 12, alignItems: 'center' },
-  cancelModalText: { color: '#94A3B8', fontSize: 14 },
-  successBox: { backgroundColor: '#064E3B44', padding: 16, borderRadius: 12, alignItems: 'center' },
-  successText: { color: '#34D399', fontSize: 14, fontWeight: 'bold' },
+  rankBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  rankText: {
+    color: '#D97706',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  leaderboardBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 12,
+  },
+  leaderboardTitle: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  memberAvatar: { fontSize: 14, marginRight: 8 },
+  memberName: { color: '#0F172A', fontSize: 13, flex: 1, fontWeight: '600' },
+  memberScore: { color: '#2563EB', fontSize: 12, fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
+  modalTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700', marginBottom: 16 },
+  input: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', borderWidth: 1, borderRadius: 10, padding: 14, fontSize: 15, marginBottom: 16 },
+  modalSubmitBtn: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
+  modalSubmitBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });

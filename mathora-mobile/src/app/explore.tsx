@@ -11,9 +11,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TOPICS_DATA, Topic, Lesson } from '@/services/dataService';
-import MathView from '@/components/math-view';
 
-export default function CurriculumExploreScreen() {
+export default function LearnScreen() {
   const router = useRouter();
   const [selectedClass, setSelectedClass] = useState<'ALL' | 'SS1' | 'SS2' | 'SS3'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,29 +29,28 @@ export default function CurriculumExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#090D16" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Top Header Banner */}
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Top Header */}
         <View style={styles.header}>
-          <Text style={styles.badgeText}>NERDC & WAEC ALIGNED CURRICULUM</Text>
-          <Text style={styles.title}>Mathematics Explorer</Text>
+          <Text style={styles.title}>Mathematics Curriculum</Text>
           <Text style={styles.subtitle}>
-            Browse lessons, step-by-step worked examples, WAEC exam shortcuts, and trap warnings.
+            Simplified explanations, step-by-step worked examples & WAEC shortcuts.
           </Text>
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchBox}>
+        {/* Search Input */}
+        <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
             placeholder="Search topics (e.g. Quadratics, Sine rule...)"
-            placeholderTextColor="#64748B"
+            placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
 
-        {/* Class Filter Tabs */}
+        {/* Filter Chips */}
         <View style={styles.filterRow}>
           {(['ALL', 'SS1', 'SS2', 'SS3'] as const).map((cls) => {
             const isSelected = selectedClass === cls;
@@ -71,20 +69,20 @@ export default function CurriculumExploreScreen() {
         </View>
 
         {/* Topics List */}
-        <Text style={styles.sectionTitle}>Curriculum Topics ({filteredTopics.length})</Text>
+        <Text style={styles.sectionHeaderTitle}>Curriculum Topics ({filteredTopics.length})</Text>
 
         {filteredTopics.map((topic: Topic) => {
           const isExpanded = expandedTopicId === topic.id;
           return (
             <View key={topic.id} style={styles.topicCard}>
               <TouchableOpacity
-                style={styles.topicHeader}
+                style={styles.topicHeaderRow}
                 onPress={() => setExpandedTopicId(isExpanded ? null : topic.id)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
                 <View style={styles.topicHeaderLeft}>
-                  <View style={styles.classBadgeContainer}>
-                    <Text style={styles.classBadge}>{topic.class_level}</Text>
+                  <View style={styles.classLevelBadge}>
+                    <Text style={styles.classLevelText}>{topic.class_level}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.topicTitle}>{topic.title}</Text>
@@ -100,8 +98,8 @@ export default function CurriculumExploreScreen() {
                 </View>
               </TouchableOpacity>
 
-              {/* Progress Bar */}
-              <View style={styles.progressBg}>
+              {/* Progress Track */}
+              <View style={styles.progressTrack}>
                 <View
                   style={[
                     styles.progressFill,
@@ -111,30 +109,30 @@ export default function CurriculumExploreScreen() {
                         topic.mastery_percentage >= 80
                           ? '#10B981'
                           : topic.mastery_percentage >= 50
-                          ? '#F59E0B'
-                          : '#EF4444',
+                          ? '#2563EB'
+                          : '#F59E0B',
                     },
                   ]}
                 />
               </View>
 
-              {/* Expanded Lesson Drawer */}
+              {/* Expanded Lesson Theory */}
               {isExpanded && (
                 <View style={styles.expandedContent}>
-                  <Text style={styles.subHeader}>Lessons & Worked Examples</Text>
+                  <Text style={styles.lessonsSectionTitle}>Lessons & Worked Examples</Text>
 
                   {topic.lessons.length === 0 ? (
-                    <Text style={styles.emptyText}>Lessons coming soon for this topic.</Text>
+                    <Text style={styles.emptyLessonsText}>Lessons coming soon for this topic.</Text>
                   ) : (
                     topic.lessons.map((lesson) => {
                       const isLessonActive = activeLesson?.id === lesson.id;
                       return (
-                        <View key={lesson.id} style={styles.lessonBox}>
+                        <View key={lesson.id} style={styles.lessonItemCard}>
                           <TouchableOpacity
-                            style={styles.lessonTitleRow}
+                            style={styles.lessonHeaderRow}
                             onPress={() => setActiveLesson(isLessonActive ? null : lesson)}
                           >
-                            <Text style={styles.lessonTitle}>
+                            <Text style={styles.lessonTitleText}>
                               {lesson.order_index}. {lesson.title}
                             </Text>
                             <Text style={styles.lessonToggleText}>
@@ -143,35 +141,28 @@ export default function CurriculumExploreScreen() {
                           </TouchableOpacity>
 
                           {isLessonActive && (
-                            <View style={styles.lessonBodyContainer}>
-                              <Text style={styles.lessonSummary}>{lesson.summary}</Text>
-                              
-                              <MathView expression={lesson.content_body} size="sm" style={styles.mathBox} />
+                            <View style={styles.lessonBodyArea}>
+                              <Text style={styles.lessonSummaryText}>{lesson.summary}</Text>
 
                               {/* Worked Examples */}
                               {lesson.worked_examples.map((ex, idx) => (
-                                <View key={idx} style={styles.exampleCard}>
-                                  <Text style={styles.exampleTitle}>💡 {ex.title}</Text>
-                                  <Text style={styles.problemText}>Problem: {ex.problem_statement}</Text>
-                                  
-                                  <Text style={styles.stepsHeader}>Step-by-Step Solution:</Text>
+                                <View key={idx} style={styles.workedExampleCard}>
+                                  <Text style={styles.workedExampleTitle}>💡 {ex.title}</Text>
+                                  <Text style={styles.problemStatementText}>
+                                    Problem: {ex.problem_statement}
+                                  </Text>
+
+                                  <Text style={styles.solutionStepsTitle}>Step-by-Step Solution:</Text>
                                   {ex.solution_steps.map((step, sIdx) => (
-                                    <Text key={sIdx} style={styles.stepItem}>
+                                    <Text key={sIdx} style={styles.stepText}>
                                       {sIdx + 1}. {step}
                                     </Text>
                                   ))}
 
                                   {ex.exam_shortcut && (
-                                    <View style={styles.shortcutCard}>
+                                    <View style={styles.shortcutBox}>
                                       <Text style={styles.shortcutTitle}>⚡ WAEC EXAM SHORTCUT</Text>
-                                      <Text style={styles.shortcutText}>{ex.exam_shortcut}</Text>
-                                    </View>
-                                  )}
-
-                                  {ex.common_trap_warning && (
-                                    <View style={styles.trapCard}>
-                                      <Text style={styles.trapTitle}>⚠️ COMMON TRAP WARNING</Text>
-                                      <Text style={styles.trapText}>{ex.common_trap_warning}</Text>
+                                      <Text style={styles.shortcutBody}>{ex.exam_shortcut}</Text>
                                     </View>
                                   )}
                                 </View>
@@ -183,12 +174,12 @@ export default function CurriculumExploreScreen() {
                     })
                   )}
 
-                  {/* Topic Practice Launcher Button */}
+                  {/* Practice Topic Launcher Button */}
                   <TouchableOpacity
-                    style={styles.practiceLauncherBtn}
+                    style={styles.topicPracticeBtn}
                     onPress={() => router.push('/practice')}
                   >
-                    <Text style={styles.practiceLauncherText}>⚡ Practice {topic.title} Questions</Text>
+                    <Text style={styles.topicPracticeBtnText}>Practise {topic.title} →</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -201,82 +192,74 @@ export default function CurriculumExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  header: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-  },
-  badgeText: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', marginTop: 4 },
-  subtitle: { color: '#94A3B8', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  searchBox: { marginBottom: 14 },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  header: { marginBottom: 20 },
+  title: { color: '#0F172A', fontSize: 24, fontWeight: '800' },
+  subtitle: { color: '#64748B', fontSize: 13, marginTop: 4, lineHeight: 18 },
+  searchContainer: { marginBottom: 14 },
   searchInput: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 14,
-    color: '#FFFFFF',
+    color: '#0F172A',
     fontSize: 14,
   },
-  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
   filterChip: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
-  filterChipActive: { backgroundColor: '#1E1B4B', borderColor: '#4338CA' },
-  filterChipText: { color: '#94A3B8', fontSize: 12, fontWeight: '600' },
-  filterChipTextActive: { color: '#38BDF8', fontWeight: 'bold' },
-  sectionTitle: { color: '#F8FAFC', fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  filterChipActive: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
+  filterChipText: { color: '#64748B', fontSize: 12, fontWeight: '600' },
+  filterChipTextActive: { color: '#2563EB', fontWeight: '700' },
+  sectionHeaderTitle: { color: '#0F172A', fontSize: 16, fontWeight: '700', marginBottom: 12 },
   topicCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
     borderWidth: 1,
     borderRadius: 16,
-    padding: 16,
+    padding: 18,
     marginBottom: 14,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
   },
-  topicHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  topicHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   topicHeaderLeft: { flexDirection: 'row', flex: 1, gap: 12, alignItems: 'flex-start', paddingRight: 8 },
-  classBadgeContainer: { backgroundColor: '#1E293B', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  classBadge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold' },
-  topicTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  topicDesc: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
+  classLevelBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  classLevelText: { color: '#2563EB', fontSize: 10, fontWeight: '700' },
+  topicTitle: { color: '#0F172A', fontSize: 16, fontWeight: '800' },
+  topicDesc: { color: '#64748B', fontSize: 12, marginTop: 2, lineHeight: 16 },
   masteryCol: { alignItems: 'flex-end' },
-  masteryVal: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold' },
-  masteryLbl: { color: '#64748B', fontSize: 10 },
-  progressBg: { height: 6, backgroundColor: '#1E293B', borderRadius: 3, marginTop: 12, overflow: 'hidden' },
+  masteryVal: { color: '#2563EB', fontSize: 18, fontWeight: '800' },
+  masteryLbl: { color: '#94A3B8', fontSize: 10 },
+  progressTrack: { height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, marginTop: 12, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3 },
-  expandedContent: { marginTop: 16, borderTopWidth: 1, borderColor: '#1E293B', paddingTop: 14 },
-  subHeader: { color: '#C7D2FE', fontSize: 13, fontWeight: 'bold', marginBottom: 10 },
-  emptyText: { color: '#64748B', fontSize: 12, fontStyle: 'italic' },
-  lessonBox: { backgroundColor: '#1E1B4B33', borderColor: '#312E81', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
-  lessonTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  lessonTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', flex: 1 },
-  lessonToggleText: { color: '#38BDF8', fontSize: 11, fontWeight: 'bold' },
-  lessonBodyContainer: { marginTop: 10 },
-  lessonSummary: { color: '#94A3B8', fontSize: 12, marginBottom: 8 },
-  mathBox: { marginVertical: 6 },
-  exampleCard: { backgroundColor: '#0F172A', borderColor: '#334155', borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 10 },
-  exampleTitle: { color: '#FDE68A', fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
-  problemText: { color: '#FFFFFF', fontSize: 13, fontWeight: 'bold', marginBottom: 8 },
-  stepsHeader: { color: '#C7D2FE', fontSize: 11, fontWeight: 'bold', marginBottom: 4 },
-  stepItem: { color: '#CBD5E1', fontSize: 12, lineHeight: 18, marginBottom: 2 },
-  shortcutCard: { backgroundColor: '#064E3B33', borderColor: '#059669', borderWidth: 1, borderRadius: 8, padding: 10, marginTop: 8 },
-  shortcutTitle: { color: '#34D399', fontSize: 10, fontWeight: 'bold' },
-  shortcutText: { color: '#ECFDF5', fontSize: 12, marginTop: 2 },
-  trapCard: { backgroundColor: '#7F1D1D33', borderColor: '#DC2626', borderWidth: 1, borderRadius: 8, padding: 10, marginTop: 8 },
-  trapTitle: { color: '#FCA5A5', fontSize: 10, fontWeight: 'bold' },
-  trapText: { color: '#FEE2E2', fontSize: 12, marginTop: 2 },
-  practiceLauncherBtn: { backgroundColor: '#F59E0B', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 12 },
-  practiceLauncherText: { color: '#090D16', fontSize: 14, fontWeight: 'bold' },
+  expandedContent: { marginTop: 16, borderTopWidth: 1, borderColor: '#F1F5F9', paddingTop: 14 },
+  lessonsSectionTitle: { color: '#0F172A', fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  emptyLessonsText: { color: '#94A3B8', fontSize: 12, fontStyle: 'italic' },
+  lessonItemCard: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
+  lessonHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  lessonTitleText: { color: '#0F172A', fontSize: 14, fontWeight: '700', flex: 1 },
+  lessonToggleText: { color: '#2563EB', fontSize: 11, fontWeight: '700' },
+  lessonBodyArea: { marginTop: 10 },
+  lessonSummaryText: { color: '#64748B', fontSize: 12, marginBottom: 8 },
+  workedExampleCard: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 8 },
+  workedExampleTitle: { color: '#0F172A', fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  problemStatementText: { color: '#0F172A', fontSize: 13, fontWeight: '600', marginBottom: 6 },
+  solutionStepsTitle: { color: '#64748B', fontSize: 11, fontWeight: '700', marginBottom: 4 },
+  stepText: { color: '#334155', fontSize: 12, lineHeight: 18, marginBottom: 2 },
+  shortcutBox: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', borderWidth: 1, borderRadius: 8, padding: 10, marginTop: 8 },
+  shortcutTitle: { color: '#10B981', fontSize: 10, fontWeight: '700' },
+  shortcutBody: { color: '#065F46', fontSize: 12, marginTop: 2 },
+  topicPracticeBtn: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 12 },
+  topicPracticeBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 });
