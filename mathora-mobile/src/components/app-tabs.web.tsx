@@ -10,21 +10,28 @@ import { Pressable, View, StyleSheet, Text } from 'react-native';
 
 export default function AppTabs() {
   return (
-    <View style={styles.pageOuterWrapper}>
-      {/* Centered Mobile Device Viewport */}
-      <View style={styles.phoneFrame}>
-        {/* Mobile Device Status Bar Notch */}
-        <View style={styles.notchHeader}>
-          <View style={styles.notchSpeaker} />
-          <Text style={styles.notchTimeText}>9:41</Text>
+    <View style={styles.pageBackgroundContainer}>
+      {/* Sleek Ambient Glow Backdrop */}
+      <View style={styles.ambientGlowTop} />
+      <View style={styles.ambientGlowBottom} />
+
+      {/* Main Luxury Mobile Phone Frame */}
+      <View style={styles.mobilePhoneDevice}>
+        {/* Dynamic Island / Speaker Notch Header */}
+        <View style={styles.notchHeaderBar}>
+          <View style={styles.dynamicIslandNotch}>
+            <View style={styles.cameraLens} />
+          </View>
+          <Text style={styles.deviceTimeText}>9:41</Text>
         </View>
 
-        <Tabs style={styles.tabContainer}>
-          <TabSlot style={{ flex: 1, backgroundColor: '#090D16' }} />
+        {/* Mobile Viewport Screen */}
+        <Tabs style={styles.mobileViewportTabContainer}>
+          <TabSlot style={{ flex: 1, backgroundColor: '#030712' }} />
           <TabList asChild>
             <CustomTabList>
               <TabTrigger name="home" href="/" asChild>
-                <TabButton icon="🏠">Home</TabButton>
+                <TabButton icon="⚡">Home</TabButton>
               </TabTrigger>
               <TabTrigger name="explore" href="/explore" asChild>
                 <TabButton icon="📚">Topics</TabButton>
@@ -42,8 +49,8 @@ export default function AppTabs() {
           </TabList>
         </Tabs>
 
-        {/* Mobile Home Bar Indicator */}
-        <View style={styles.homeBarContainer}>
+        {/* Smartphone Home Bar Indicator */}
+        <View style={styles.bottomHomeBarArea}>
           <View style={styles.homeBarLine} />
         </View>
       </View>
@@ -53,10 +60,10 @@ export default function AppTabs() {
 
 export function TabButton({ children, icon, isFocused, ...props }: TabTriggerSlotProps & { icon?: string }) {
   return (
-    <Pressable {...props} style={({ pressed }) => [styles.tabFlexItem, pressed && styles.pressed]}>
+    <Pressable {...props} style={({ pressed }) => [styles.tabItemFlex, pressed && styles.pressedTab]}>
       <View style={[styles.tabButtonView, isFocused && styles.tabButtonActive]}>
-        <Text style={styles.tabIcon}>{icon}</Text>
-        <Text style={[styles.tabText, isFocused && styles.tabTextActive]}>
+        <Text style={styles.tabIconEmoji}>{icon}</Text>
+        <Text style={[styles.tabLabelText, isFocused && styles.tabLabelTextActive]}>
           {children}
         </Text>
       </View>
@@ -66,8 +73,8 @@ export function TabButton({ children, icon, isFocused, ...props }: TabTriggerSlo
 
 export function CustomTabList(props: TabListProps) {
   return (
-    <View {...props} style={styles.tabListContainer}>
-      <View style={styles.innerContainer}>
+    <View {...props} style={styles.tabListWrapper}>
+      <View style={styles.glassTabContainer}>
         {props.children}
       </View>
     </View>
@@ -75,108 +82,143 @@ export function CustomTabList(props: TabListProps) {
 }
 
 const styles = StyleSheet.create({
-  pageOuterWrapper: {
+  pageBackgroundContainer: {
     flex: 1,
     backgroundColor: '#020617',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    position: 'relative',
   },
-  phoneFrame: {
+  ambientGlowTop: {
+    position: 'absolute',
+    top: -100,
+    left: '25%',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: '#4338CA',
+    opacity: 0.15,
+  },
+  ambientGlowBottom: {
+    position: 'absolute',
+    bottom: -100,
+    right: '25%',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: '#F59E0B',
+    opacity: 0.12,
+  },
+  mobilePhoneDevice: {
     width: '100%',
-    maxWidth: 440,
+    maxWidth: 420,
     height: '100%',
-    maxHeight: 900,
-    backgroundColor: '#090D16',
-    borderRadius: 36,
-    borderWidth: 8,
+    maxHeight: 880,
+    backgroundColor: '#030712',
+    borderRadius: 44,
+    borderWidth: 10,
     borderColor: '#1E293B',
     overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.8,
-    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.95,
+    shadowRadius: 30,
     position: 'relative',
   },
-  notchHeader: {
-    height: 32,
-    backgroundColor: '#090D16',
+  notchHeaderBar: {
+    height: 36,
+    backgroundColor: '#030712',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     borderBottomWidth: 1,
     borderColor: '#0F172A',
+    zIndex: 10,
   },
-  notchSpeaker: {
-    width: 60,
-    height: 4,
-    backgroundColor: '#334155',
-    borderRadius: 2,
+  dynamicIslandNotch: {
+    width: 80,
+    height: 18,
+    backgroundColor: '#0F172A',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: '#1E293B',
+    borderWidth: 1,
   },
-  notchTimeText: {
+  cameraLens: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#020617',
+  },
+  deviceTimeText: {
     color: '#94A3B8',
     fontSize: 11,
     fontWeight: 'bold',
   },
-  tabContainer: {
+  mobileViewportTabContainer: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: '#030712',
   },
-  tabListContainer: {
+  tabListWrapper: {
     width: '100%',
-    backgroundColor: '#0F172AD0',
+    backgroundColor: '#090D16EE',
     borderTopWidth: 1,
     borderColor: '#1E293B',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
-  innerContainer: {
+  glassTabContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     width: '100%',
   },
-  tabFlexItem: {
+  tabItemFlex: {
     flex: 1,
     alignItems: 'center',
   },
-  pressed: {
+  pressedTab: {
     opacity: 0.7,
   },
   tabButtonView: {
     alignItems: 'center',
     paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
   },
   tabButtonActive: {
     backgroundColor: '#1E1B4B',
+    borderColor: '#4338CA',
+    borderWidth: 1,
   },
-  tabIcon: {
+  tabIconEmoji: {
     fontSize: 16,
   },
-  tabText: {
+  tabLabelText: {
     color: '#64748B',
     fontSize: 10,
     fontWeight: '600',
     marginTop: 2,
   },
-  tabTextActive: {
+  tabLabelTextActive: {
     color: '#F59E0B',
     fontWeight: 'bold',
   },
-  homeBarContainer: {
-    height: 16,
-    backgroundColor: '#090D16',
+  bottomHomeBarArea: {
+    height: 18,
+    backgroundColor: '#030712',
     alignItems: 'center',
     justifyContent: 'center',
   },
   homeBarLine: {
-    width: 120,
+    width: 130,
     height: 4,
-    backgroundColor: '#475569',
+    backgroundColor: '#334155',
     borderRadius: 2,
   },
 });
