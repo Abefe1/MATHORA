@@ -10,12 +10,16 @@ import {
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/lib/authContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, signOut } = useAuth();
   const [offlineSync, setOfflineSync] = useState(true);
   const [darkTheme, setDarkTheme] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'Student' | 'Teacher' | 'Parent'>('Student');
+
+  const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || 'Signed in';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,9 +36,9 @@ export default function ProfileScreen() {
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarEmoji}>🎓</Text>
           </View>
-          <Text style={styles.profileName}>Ahmed Okafor</Text>
+          <Text style={styles.profileName}>{displayName}</Text>
           <Text style={styles.profileLevel}>SS2 Mathematics • WAEC 2026</Text>
-          <Text style={styles.profileSchool}>Federal Government College, Lagos</Text>
+          <Text style={styles.profileSchool}>{user?.email ?? 'Not signed in'}</Text>
         </View>
 
         {/* Role Portal Switcher */}
@@ -86,6 +90,10 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
+
+        <TouchableOpacity style={styles.signOutBtn} onPress={signOut} activeOpacity={0.85}>
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
 
         {/* System Info */}
         <View style={styles.systemCard}>
@@ -161,6 +169,16 @@ const styles = StyleSheet.create({
   },
   settingLabel: { color: '#0F172A', fontSize: 14, fontWeight: '700' },
   settingSub: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  signOutBtn: {
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  signOutText: { color: '#EF4444', fontSize: 13, fontWeight: '700' },
   systemCard: { alignItems: 'center', marginTop: 12 },
   systemText: { color: '#94A3B8', fontSize: 12, fontWeight: '600' },
   systemSub: { color: '#CBD5E1', fontSize: 11, marginTop: 2 },

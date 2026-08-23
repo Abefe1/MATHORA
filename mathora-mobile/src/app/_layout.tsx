@@ -4,34 +4,58 @@
 // globally before any Supabase code runs.
 import 'react-native-url-polyfill/auto';
 
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { AuthProvider, useAuth } from '@/lib/authContext';
 import { registerForPushNotifications } from '@/services/pushNotifications';
 
 SplashScreen.preventAutoHideAsync();
 
+const PUBLIC_ROUTES = ['login', 'register'];
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const onPublicRoute = PUBLIC_ROUTES.includes(segments[0] ?? '');
+    if (!user && !onPublicRoute) {
+      router.replace('/login');
+    } else if (user && onPublicRoute) {
+      router.replace('/');
+    }
+  }, [user, loading, segments, router]);
+
+  useEffect(() => {
+    // Registering only reacts to becoming signed in, rather than
+    // running unconditionally on every launch — registerForPushNotifications()
+    // resolves the current session itself, so this just avoids a
+    // pointless call while signed out.
+    if (user) registerForPushNotifications();
+  }, [user]);
+
+  return <>{children}</>;
+}
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
-  useEffect(() => {
-    // Silent no-op today: registerForPushNotifications() resolves to
-    // { status: 'no_session' } until mathora-mobile has its own
-    // sign-in flow (see that function's doc comment). Registering
-    // eagerly on launch — rather than gating on a settings toggle —
-    // matches how the rest of the app already treats push as an
-    // implicit part of being signed in, not an opt-in feature.
-    registerForPushNotifications();
-  }, []);
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <AnimatedSplashOverlay />
+        <AuthGate>
+          <AppTabs />
+        </AuthGate>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

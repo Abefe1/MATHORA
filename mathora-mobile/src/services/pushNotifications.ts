@@ -97,10 +97,21 @@ export async function registerForPushNotifications(): Promise<RegisterPushResult
       return { status: 'error', message: error.message };
     }
 
+    lastRegisteredToken = token;
     return { status: 'registered', token };
   } catch (err) {
     return { status: 'error', message: err instanceof Error ? err.message : String(err) };
   }
+}
+
+// Tracked so sign-out can clean up without re-requesting a token.
+let lastRegisteredToken: string | null = null;
+
+/** Removes this device's most recently registered token — call on sign-out. */
+export async function unregisterCurrentPushToken() {
+  if (!lastRegisteredToken) return;
+  await unregisterPushToken(lastRegisteredToken);
+  lastRegisteredToken = null;
 }
 
 /**
