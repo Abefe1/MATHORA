@@ -1,13 +1,41 @@
 import { createClient } from '@supabase/supabase-js';
-import { TOPICS_DATA, Topic, Question, STUDY_SQUADS_DATA, StudySquad, MISCONCEPTIONS_DATA, MisconceptionAnalysis } from './dataService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState } from 'react-native';
+import { TOPICS_DATA, Topic, STUDY_SQUADS_DATA, StudySquad } from './dataService';
 
 // Supabase environment keys (can be configured via EXPO_PUBLIC_SUPABASE_URL)
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// React Native has no browser localStorage, so the session has to be
+// told explicitly where to persist — AsyncStorage is the standard
+// choice (per Supabase's own React Native guide). Without this, every
+// cold start would sign the user out and RLS-protected reads would
+// silently fall back to guest/anon access.
 export const supabase = (supabaseUrl && supabaseAnonKey)
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false, // no browser URL to inspect on native
+      },
+    })
   : null;
+
+// Supabase's background token auto-refresh only ticks while something
+// calls startAutoRefresh(); on native that has to be driven by the
+// app's foreground/background state rather than a browser tab's
+// visibility (which is what the SDK assumes by default).
+if (supabase) {
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      supabase.auth.startAutoRefresh();
+    } else {
+      supabase.auth.stopAutoRefresh();
+    }
+  });
+}
 
 // Live or Graceful Fallback Topics Fetcher
 export async function getMobileTopics(): Promise<Topic[]> {

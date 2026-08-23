@@ -11,7 +11,7 @@ export interface OfflineAttempt {
   student_id: string;
   question_id: string;
   topic_id: string;
-  selected_option: string;
+  selected_option: 'A' | 'B' | 'C' | 'D';
   is_correct: boolean;
   time_taken_seconds: number;
   rescue_mode_triggered: boolean;
@@ -47,6 +47,19 @@ export function getOfflineQueue(): OfflineAttempt[] {
 
 export function clearOfflineQueue() {
   if (typeof window !== 'undefined') {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
+// Removes only the given entries (by id) from the queue — used after a
+// partially-successful flush, where some attempts synced and others
+// need to stay queued for the next retry.
+export function removeFromOfflineQueue(ids: string[]) {
+  if (typeof window === 'undefined' || ids.length === 0) return;
+  const remaining = getOfflineQueue().filter((a) => !ids.includes(a.id));
+  if (remaining.length > 0) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
+  } else {
     localStorage.removeItem(STORAGE_KEY);
   }
 }

@@ -37,7 +37,7 @@ export default function ParentScreen() {
         <View style={styles.noteCard}>
           <Text style={styles.noteTag}>VERIFIED TEACHER NOTE</Text>
           <Text style={styles.noteText}>
-            "Chidiebere has improved greatly in Quadratic Factorization this week! Recommend continuing Rescue Mode practice on Trigonometry."
+            &ldquo;Chidiebere has improved greatly in Quadratic Factorization this week! Recommend continuing Rescue Mode practice on Trigonometry.&rdquo;
           </Text>
           <Text style={styles.teacherSign}>— Mr. Olanrewaju Bello (Subject Teacher)</Text>
         </View>

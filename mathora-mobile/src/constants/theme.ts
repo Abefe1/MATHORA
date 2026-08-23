@@ -70,3 +70,27 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+// Keys of the light/dark palette (background, surface, text, primary, ...).
+// Used by ThemedText/ThemedView to type-check `themeColor`/`type` props
+// against an actual token instead of an arbitrary string.
+export type ThemeColor = keyof typeof ThemeTokens.light;
+
+// System font stack, following Expo's standard theme.ts convention
+// (ios gets the native ui-* families; everything else falls back to
+// the platform default). The app doesn't currently load a custom
+// font via expo-font, so this intentionally stays system-only.
+export const Fonts = Platform.select({
+  ios: {
+    sans: 'system-ui',
+    serif: 'ui-serif',
+    rounded: 'ui-rounded',
+    mono: 'ui-monospace',
+  },
+  default: {
+    sans: 'normal',
+    serif: 'serif',
+    rounded: 'normal',
+    mono: 'monospace',
+  },
+});

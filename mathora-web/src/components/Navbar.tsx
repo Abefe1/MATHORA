@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation';
 import { UserRole } from '@/lib/types';
 import { useTheme } from '@/lib/themeContext';
 import { useAuth } from '@/lib/authContext';
+import { useOfflineFlush } from '@/lib/useOfflineFlush';
 import { MathoraMark } from '@/components/ui/Primitives';
-import { Settings, Sun, Moon, Monitor, ChevronDown, Check, LogOut } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, ChevronDown, Check, LogOut, CloudOff, RefreshCw } from 'lucide-react';
 
 interface NavbarProps {
   currentRole?: UserRole;
@@ -20,6 +21,7 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const { pendingCount, syncing } = useOfflineFlush();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
   const toggleTheme = () => {
@@ -199,6 +201,20 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
               </div>
             )}
           </div>
+
+          {pendingCount > 0 && (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-950/60 border border-amber-800/80 text-amber-300 text-[11px] font-mono font-bold"
+              title={`${pendingCount} practice attempt${pendingCount === 1 ? '' : 's'} saved offline — will sync when back online`}
+            >
+              {syncing ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CloudOff className="w-3.5 h-3.5" />
+              )}
+              <span>{pendingCount} queued</span>
+            </div>
+          )}
 
           <Link href="/student/settings" className="p-2 text-slate-400 hover:text-white rounded-lg">
             <Settings className="w-4 h-4" />

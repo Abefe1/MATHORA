@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { INITIAL_TOPICS } from './mockData';
 import { Topic, Question, WorkedExample } from './types';
-import { enqueueAttempt } from './offlineSync';
+import { enqueueAttempt, getOfflineQueue, removeFromOfflineQueue, type OfflineAttempt } from './offlineSync';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -89,7 +89,7 @@ export async function fetchWorkedExamples(topicId?: string): Promise<WorkedExamp
 // app and mathora-mobile already use everywhere. topic_mastery is
 // derived server-side by the on_attempt_recorded trigger, not written
 // from here.
-export async function submitQuestionAttempt(attempt: {
+type AttemptInput = {
   student_id: string; // auth.uid() of the signed-in student — resolved to students.id below
   question_id: string;
   topic_id: string;
@@ -97,11 +97,14 @@ export async function submitQuestionAttempt(attempt: {
   is_correct: boolean;
   time_taken_seconds: number;
   rescue_mode_triggered: boolean;
-}): Promise<{ success: boolean; offlineQueued?: boolean }> {
-  if (!supabase || (typeof navigator !== 'undefined' && !navigator.onLine)) {
-    enqueueAttempt(attempt);
-    return { success: true, offlineQueued: true };
-  }
+};
+
+// Shared by submitQuestionAttempt (live path) and flushOfflineQueue
+// (retry path) so both resolve identity and insert the same way.
+// Returns false (never throws) on any failure so callers can decide
+// whether to queue/re-queue the attempt.
+async function insertAttemptRow(attempt: AttemptInput): Promise<boolean> {
+  if (!supabase) return false;
 
   try {
     // attempts.student_id is a students.id (profile PK), not auth.uid() —
@@ -113,10 +116,7 @@ export async function submitQuestionAttempt(attempt: {
       .eq('user_id', attempt.student_id)
       .single();
 
-    if (studentError || !studentRow) {
-      enqueueAttempt(attempt);
-      return { success: true, offlineQueued: true };
-    }
+    if (studentError || !studentRow) return false;
 
     const { error } = await supabase.from('attempts').insert({
       student_id: studentRow.id,
@@ -128,16 +128,47 @@ export async function submitQuestionAttempt(attempt: {
       rescue_mode_triggered: attempt.rescue_mode_triggered,
     });
 
-    if (error) {
-      enqueueAttempt(attempt);
-      return { success: true, offlineQueued: true };
-    }
-
-    return { success: true };
+    return !error;
   } catch {
+    return false;
+  }
+}
+
+export async function submitQuestionAttempt(attempt: AttemptInput): Promise<{ success: boolean; offlineQueued?: boolean }> {
+  if (!supabase || (typeof navigator !== 'undefined' && !navigator.onLine)) {
     enqueueAttempt(attempt);
     return { success: true, offlineQueued: true };
   }
+
+  const ok = await insertAttemptRow(attempt);
+  if (!ok) {
+    enqueueAttempt(attempt);
+    return { success: true, offlineQueued: true };
+  }
+
+  return { success: true };
+}
+
+// Retries every locally-queued attempt (from a prior offline session or
+// a failed insert) against Supabase. Call this on reconnect — see
+// lib/useOfflineFlush.ts, which wires it to the browser's 'online'
+// event and to sign-in. Entries that still fail (still offline, RLS
+// rejection, etc.) are left in the queue for the next attempt.
+export async function flushOfflineQueue(): Promise<{ synced: number; remaining: number }> {
+  const queue: OfflineAttempt[] = getOfflineQueue();
+  if (!supabase || queue.length === 0) {
+    return { synced: 0, remaining: queue.length };
+  }
+
+  const syncedIds: string[] = [];
+  for (const entry of queue) {
+    const ok = await insertAttemptRow(entry);
+    if (ok) syncedIds.push(entry.id);
+  }
+
+  if (syncedIds.length > 0) removeFromOfflineQueue(syncedIds);
+
+  return { synced: syncedIds.length, remaining: queue.length - syncedIds.length };
 }
 
 // --- Teacher Class Management ---
