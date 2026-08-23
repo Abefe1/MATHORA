@@ -81,16 +81,14 @@ export async function fetchWorkedExamples(topicId?: string): Promise<WorkedExamp
 
 // --- Submit Attempt & Topic Mastery ---
 //
-// NOTE — schema mismatch: mathora_schema.sql's `attempts` table has
-// (student_id references students.id, selected_option_id references
-// question_options.id, time_spent_seconds, no rescue_mode_triggered
-// column). The insert below uses a flattened shape (selected_option
-// letter, time_taken_seconds, rescue_mode_triggered) that predates this
-// audit and does not match that table. This function now resolves the
-// correct `students.id` for RLS purposes, but the column list still
-// needs reconciling with mathora_schema.sql (or the schema needs to
-// change to match the app) before this insert will actually succeed
-// against a live database with the patched RLS policies applied.
+// mathora_schema.sql's `attempts` table (student_id, question_id,
+// topic_id, selected_option letter, is_correct, time_taken_seconds,
+// rescue_mode_triggered) matches this insert's column shape directly —
+// reconciled from an earlier normalized draft (selected_option_id /
+// question_options / time_spent_seconds) to the flattened shape this
+// app and mathora-mobile already use everywhere. topic_mastery is
+// derived server-side by the on_attempt_recorded trigger, not written
+// from here.
 export async function submitQuestionAttempt(attempt: {
   student_id: string; // auth.uid() of the signed-in student — resolved to students.id below
   question_id: string;
@@ -123,6 +121,7 @@ export async function submitQuestionAttempt(attempt: {
     const { error } = await supabase.from('attempts').insert({
       student_id: studentRow.id,
       question_id: attempt.question_id,
+      topic_id: attempt.topic_id,
       selected_option: attempt.selected_option,
       is_correct: attempt.is_correct,
       time_taken_seconds: attempt.time_taken_seconds,
