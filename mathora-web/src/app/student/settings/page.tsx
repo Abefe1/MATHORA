@@ -1,16 +1,47 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useTheme, ThemeType } from '@/lib/themeContext';
-import { Settings, Bell, MessageSquare, ShieldCheck, Wifi, Eye, Sun, Moon, Monitor } from 'lucide-react';
+import { subscribeToWebPush, unsubscribeFromWebPush, getWebPushSubscriptionStatus, type WebPushStatus } from '@/lib/pushNotifications';
+import { Settings, Bell, MessageSquare, ShieldCheck, Wifi, Eye, Sun, Moon, Monitor, Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  // WhatsApp channel is not wired to any messaging provider yet — this
+  // toggle is UI-only until a WhatsApp Business API / Twilio
+  // integration exists server-side. Don't read this as "notifications
+  // are working" — see the browser push toggle below for the one
+  // that's actually live.
   const [whatsappEnabled, setWhatsappEnabled] = useState(true);
   const [notificationWindow, setNotificationWindow] = useState('afternoon');
   const [lowDataMode, setLowDataMode] = useState(true);
   const [fontSize, setFontSize] = useState('medium');
+
+  const [pushStatus, setPushStatus] = useState<'subscribed' | 'not_subscribed' | 'unsupported' | 'loading'>('loading');
+  const [pushError, setPushError] = useState<WebPushStatus | null>(null);
+
+  useEffect(() => {
+    getWebPushSubscriptionStatus().then(setPushStatus);
+  }, []);
+
+  const handleTogglePush = async () => {
+    setPushError(null);
+    if (pushStatus === 'subscribed') {
+      await unsubscribeFromWebPush();
+      setPushStatus('not_subscribed');
+      return;
+    }
+
+    setPushStatus('loading');
+    const result = await subscribeToWebPush();
+    if (result === 'subscribed') {
+      setPushStatus('subscribed');
+    } else {
+      setPushStatus('not_subscribed');
+      setPushError(result);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">
@@ -74,6 +105,50 @@ export default function SettingsPage() {
                 <Monitor className="w-6 h-6 text-cyan-500" />
                 <span className="text-xs">System Default</span>
               </button>
+            </div>
+          </div>
+
+          {/* Browser Push Notifications */}
+          <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3 mb-4">
+              <Bell className="w-5 h-5 text-indigo-500" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Push Notifications</h2>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Study reminders & alerts on this browser</p>
+                <p className="text-xs text-slate-500">Streak reminders, assignment due dates, and mastery updates — even when Mathora isn&apos;t open.</p>
+                {pushError === 'no_session' && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Sign in first to enable push notifications.</p>
+                )}
+                {pushError === 'denied' && (
+                  <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">Notifications are blocked for this site in your browser settings.</p>
+                )}
+                {pushError === 'unsupported' && (
+                  <p className="text-xs text-slate-500 mt-1">This browser doesn&apos;t support push notifications.</p>
+                )}
+                {pushError === 'no_vapid_key' && (
+                  <p className="text-xs text-slate-500 mt-1">Push isn&apos;t configured on this deployment yet.</p>
+                )}
+              </div>
+
+              {pushStatus === 'loading' ? (
+                <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+              ) : pushStatus === 'unsupported' ? (
+                <span className="text-xs text-slate-400 font-mono">Unsupported</span>
+              ) : (
+                <button
+                  onClick={handleTogglePush}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                    pushStatus === 'subscribed'
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {pushStatus === 'subscribed' ? 'Enabled — tap to disable' : 'Enable'}
+                </button>
+              )}
             </div>
           </div>
 
