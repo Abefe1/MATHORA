@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserRole } from '@/lib/types';
 import { useTheme } from '@/lib/themeContext';
+import { useAuth } from '@/lib/authContext';
 import { MathoraMark } from '@/components/ui/Primitives';
-import { Settings, Sun, Moon, Monitor, ChevronDown, Check } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, ChevronDown, Check, LogOut } from 'lucide-react';
 
 interface NavbarProps {
   currentRole?: UserRole;
@@ -18,6 +19,7 @@ interface NavbarProps {
 export default function Navbar({ currentRole = 'student', userName = 'Chidiebere Okafor' }: NavbarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
   const toggleTheme = () => {
@@ -179,6 +181,21 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
                 >
                   Admin CMS {currentRole === 'super_admin' && <Check className="w-3.5 h-3.5 text-slate-400" />}
                 </Link>
+
+                {user && (
+                  <>
+                    <div className="border-t border-slate-800 my-1" />
+                    <button
+                      onClick={() => {
+                        setShowRoleDropdown(false);
+                        signOut();
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-800 flex items-center gap-2 text-rose-400"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Sign Out
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

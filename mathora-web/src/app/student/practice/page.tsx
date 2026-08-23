@@ -10,8 +10,10 @@ import { Sparkles, CheckCircle2, XCircle, ArrowRight, RotateCcw, Lightbulb, Awar
 import Link from 'next/link';
 
 import { submitQuestionAttempt } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function PracticePage() {
+  const { user } = useAuth();
   const [currentTopic, setCurrentTopic] = useState(INITIAL_TOPICS[0]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<QuestionOption | null>(null);
@@ -38,8 +40,10 @@ export default function PracticePage() {
       setShowRescueModal(true);
     }
 
+    if (!user) return; // proxy.ts already guards this route, but guard defensively too
+
     submitQuestionAttempt({
-      student_id: 'student-1',
+      student_id: user.id,
       question_id: currentQuestion.id,
       topic_id: currentTopic.id,
       selected_option: selectedOption.letter,

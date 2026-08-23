@@ -80,8 +80,19 @@ export async function fetchWorkedExamples(topicId?: string): Promise<WorkedExamp
 }
 
 // --- Submit Attempt & Topic Mastery ---
+//
+// NOTE — schema mismatch: mathora_schema.sql's `attempts` table has
+// (student_id references students.id, selected_option_id references
+// question_options.id, time_spent_seconds, no rescue_mode_triggered
+// column). The insert below uses a flattened shape (selected_option
+// letter, time_taken_seconds, rescue_mode_triggered) that predates this
+// audit and does not match that table. This function now resolves the
+// correct `students.id` for RLS purposes, but the column list still
+// needs reconciling with mathora_schema.sql (or the schema needs to
+// change to match the app) before this insert will actually succeed
+// against a live database with the patched RLS policies applied.
 export async function submitQuestionAttempt(attempt: {
-  student_id: string;
+  student_id: string; // auth.uid() of the signed-in student — resolved to students.id below
   question_id: string;
   topic_id: string;
   selected_option: 'A' | 'B' | 'C' | 'D';
@@ -95,8 +106,22 @@ export async function submitQuestionAttempt(attempt: {
   }
 
   try {
+    // attempts.student_id is a students.id (profile PK), not auth.uid() —
+    // look up the caller's own profile row rather than trusting a
+    // client-passed value for it.
+    const { data: studentRow, error: studentError } = await supabase
+      .from('students')
+      .select('id')
+      .eq('user_id', attempt.student_id)
+      .single();
+
+    if (studentError || !studentRow) {
+      enqueueAttempt(attempt);
+      return { success: true, offlineQueued: true };
+    }
+
     const { error } = await supabase.from('attempts').insert({
-      student_id: attempt.student_id,
+      student_id: studentRow.id,
       question_id: attempt.question_id,
       selected_option: attempt.selected_option,
       is_correct: attempt.is_correct,
@@ -117,10 +142,15 @@ export async function submitQuestionAttempt(attempt: {
 }
 
 // --- Teacher Class Management ---
-export async function createTeacherClassInSupabase(name: string, teacherId = 'teacher-1'): Promise<{ id: string; name: string; code: string; studentsCount: number; avgMastery: number }> {
+// `authUserId` is the signed-in teacher's auth.uid(), not classes.teacher_id
+// (a teachers.id profile PK) — resolved below. There is no hardcoded
+// fallback id here on purpose: without a real signed-in teacher this
+// returns the local-only optimistic class rather than silently
+// attributing a class to a placeholder account.
+export async function createTeacherClassInSupabase(name: string, authUserId?: string): Promise<{ id: string; name: string; code: string; studentsCount: number; avgMastery: number }> {
   const generatedCode = `MATH-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  if (!supabase) {
+  if (!supabase || !authUserId) {
     return {
       id: `c-${Date.now()}`,
       name,
@@ -131,8 +161,24 @@ export async function createTeacherClassInSupabase(name: string, teacherId = 'te
   }
 
   try {
+    const { data: teacherRow, error: teacherError } = await supabase
+      .from('teachers')
+      .select('id')
+      .eq('user_id', authUserId)
+      .single();
+
+    if (teacherError || !teacherRow) {
+      return {
+        id: `c-${Date.now()}`,
+        name,
+        code: generatedCode,
+        studentsCount: 0,
+        avgMastery: 0,
+      };
+    }
+
     const { data, error } = await supabase.from('classes').insert({
-      teacher_id: teacherId,
+      teacher_id: teacherRow.id,
       name,
       join_code: generatedCode,
     }).select().single();

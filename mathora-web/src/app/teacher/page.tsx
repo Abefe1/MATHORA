@@ -6,8 +6,10 @@ import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
 import { GraduationCap, Plus, Users, BarChart2 } from 'lucide-react';
 
 import { createTeacherClassInSupabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function TeacherDashboard() {
+  const { user } = useAuth();
   const [showClassModal, setShowClassModal] = useState(false);
   const [newClassName, setNewClassName] = useState('');
   const [classList, setClassList] = useState([
@@ -19,7 +21,7 @@ export default function TeacherDashboard() {
     e.preventDefault();
     if (!newClassName.trim()) return;
     
-    const createdClass = await createTeacherClassInSupabase(newClassName);
+    const createdClass = await createTeacherClassInSupabase(newClassName, user?.id);
     setClassList((prev) => [...prev, createdClass]);
     setNewClassName('');
     setShowClassModal(false);
