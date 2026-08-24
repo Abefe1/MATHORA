@@ -172,3 +172,61 @@ def insert_generated_content(
 def get_upload(upload_id: str) -> dict:
     result = _client.table("content_uploads").select("*").eq("id", upload_id).single().execute()
     return result.data
+
+
+# ------------------------------------------
+# Syllabus-driven batch generation (scripts/seed_from_syllabus.py).
+# Reuses the same content_uploads/review pipeline as the file-upload
+# path above, so a syllabus-generated topic shows up in the exact same
+# admin "Pending Review" tab — just with no actual file behind it
+# (storage_path is a descriptive placeholder, never read back).
+# ------------------------------------------
+
+def list_topics_for_subject(subject: str) -> list[dict]:
+    """subject: 'Mathematics' or 'Further Mathematics' (curricula.subject)."""
+    result = (
+        _client.table("topics")
+        .select("id, title, description, class_level, term, order_index, curricula!inner(subject)")
+        .eq("curricula.subject", subject)
+        .order("class_level")
+        .order("term")
+        .order("order_index")
+        .execute()
+    )
+    return result.data
+
+
+def topic_has_generated_content(topic_id: str) -> bool:
+    """
+    True if a content_uploads row already exists for this topic and
+    reached ready_for_review/published — lets the batch script skip
+    topics it already covered on a previous (possibly interrupted) run,
+    rather than re-spending API calls generating duplicates.
+    """
+    result = (
+        _client.table("content_uploads")
+        .select("id")
+        .eq("topic_id", topic_id)
+        .in_("status", ["ready_for_review", "published"])
+        .limit(1)
+        .execute()
+    )
+    return len(result.data) > 0
+
+
+def create_syllabus_upload_placeholder(topic_id: str, topic_title: str, question_count: int) -> dict:
+    result = (
+        _client.table("content_uploads")
+        .insert(
+            {
+                "uploaded_by": None,  # system-generated, not a specific human uploader
+                "topic_id": topic_id,
+                "original_filename": f"[syllabus] {topic_title}",
+                "storage_path": f"syllabus/{topic_id}",  # never read back — no real file behind this row
+                "requested_question_count": question_count,
+                "status": "generating",
+            }
+        )
+        .execute()
+    )
+    return result.data[0]
