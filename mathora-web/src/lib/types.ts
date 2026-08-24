@@ -1,3 +1,6 @@
+import type { DiagramType, DiagramData } from './diagramTypes';
+export type { DiagramType, DiagramData } from './diagramTypes';
+
 export type UserRole =
   | 'student'
   | 'teacher'
@@ -42,6 +45,13 @@ export interface WorkedExample {
   solution_steps: string[];
   exam_shortcut?: string;
   common_trap_warning?: string;
+  // A grounded real-world framing of the same problem (e.g. splitting
+  // a market stall's daily sales for a Sets/Venn Diagram lesson) —
+  // populated "whenever the topic realistically supports one", not
+  // forced onto every example. null/undefined means none was generated.
+  real_life_context?: string | null;
+  diagram_type?: DiagramType;
+  diagram_data?: DiagramData;
 }
 
 export interface Lesson {
@@ -71,6 +81,8 @@ export interface Question {
   explanation: string;
   exam_shortcut?: string;
   options: QuestionOption[];
+  diagram_type?: DiagramType;
+  diagram_data?: DiagramData;
 }
 
 export interface Topic {

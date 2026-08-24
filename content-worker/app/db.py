@@ -17,6 +17,7 @@ from .schema import GenerationResult
 _client: Client = create_client(settings.supabase_url, settings.supabase_service_role_key)
 
 STORAGE_BUCKET = "content-uploads"
+DIAGRAM_IMAGE_BUCKET = "lesson-diagrams"
 
 
 def download_upload_file(storage_path: str) -> Path:
@@ -26,6 +27,21 @@ def download_upload_file(storage_path: str) -> Path:
     tmp.write(data)
     tmp.close()
     return Path(tmp.name)
+
+
+def upload_extracted_image(upload_id: str, local_path: Path, index: int) -> str:
+    """
+    Uploads a figure parser.py pulled out of the source document to
+    the public lesson-diagrams bucket and returns its public URL, for
+    referencing via diagram_type='image' (see lib/diagramTypes.ts's
+    ImageDiagramData on the web side).
+    """
+    storage_path = f"{upload_id}/fig-{index}.png"
+    data = local_path.read_bytes()
+    _client.storage.from_(DIAGRAM_IMAGE_BUCKET).upload(
+        storage_path, data, {"content-type": "image/png", "upsert": "true"}
+    )
+    return _client.storage.from_(DIAGRAM_IMAGE_BUCKET).get_public_url(storage_path)
 
 
 def update_upload_status(upload_id: str, status: str, error_message: str | None = None) -> None:
@@ -73,7 +89,19 @@ def _get_or_create_ai_lesson(topic_id: str) -> str:
     return created.data[0]["id"]
 
 
-def insert_generated_content(upload_id: str, topic_id: str, result: GenerationResult) -> tuple[list[str], list[str]]:
+def insert_generated_content(
+    upload_id: str, topic_id: str, result: GenerationResult, extracted_image_urls: list[str] | None = None
+) -> tuple[list[str], list[str]]:
+    """
+    extracted_image_urls: figures parser.py actually pulled out of the
+    source document (already uploaded by main.py). When present, the
+    first one is attached to the first worked example that doesn't
+    already have its own generated diagram — deterministically, in
+    this orchestration layer, rather than asking the LLM to reference
+    an opaque URL it wasn't shown clearly. A real source figure takes
+    priority over a generated placeholder diagram_type, but never
+    overwrites one the model already produced.
+    """
     question_ids: list[str] = []
     worked_example_ids: list[str] = []
 
@@ -92,6 +120,8 @@ def insert_generated_content(upload_id: str, topic_id: str, result: GenerationRe
                 "exam_type": q.exam_type,
                 "explanation": q.explanation,
                 "exam_shortcut": q.exam_shortcut,
+                "diagram_type": q.diagram_type,
+                "diagram_data": q.diagram_data,
                 "status": "draft",
             }
             for q in result.questions
@@ -101,18 +131,29 @@ def insert_generated_content(upload_id: str, topic_id: str, result: GenerationRe
 
     if result.worked_examples:
         lesson_id = _get_or_create_ai_lesson(topic_id)
-        rows = [
-            {
-                "lesson_id": lesson_id,
-                "title": we.title,
-                "problem_statement": we.problem_statement,
-                "solution_steps": we.solution_steps,
-                "exam_shortcut": we.exam_shortcut,
-                "common_trap_warning": we.common_trap_warning,
-                "status": "draft",
-            }
-            for we in result.worked_examples
-        ]
+        remaining_images = list(extracted_image_urls or [])
+        rows = []
+        for we in result.worked_examples:
+            diagram_type = we.diagram_type
+            diagram_data = we.diagram_data
+            if diagram_type == "none" and remaining_images:
+                diagram_type = "image"
+                diagram_data = {"imageUrl": remaining_images.pop(0)}
+
+            rows.append(
+                {
+                    "lesson_id": lesson_id,
+                    "title": we.title,
+                    "problem_statement": we.problem_statement,
+                    "solution_steps": we.solution_steps,
+                    "exam_shortcut": we.exam_shortcut,
+                    "common_trap_warning": we.common_trap_warning,
+                    "real_life_context": we.real_life_context or None,
+                    "diagram_type": diagram_type,
+                    "diagram_data": diagram_data,
+                    "status": "draft",
+                }
+            )
         inserted = _client.table("worked_examples").insert(rows).execute()
         worked_example_ids = [row["id"] for row in inserted.data]
 

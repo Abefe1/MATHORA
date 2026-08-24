@@ -31,13 +31,26 @@ def _run_pipeline(upload_id: str) -> None:
         finally:
             local_path.unlink(missing_ok=True)
 
-        if parsed.has_undescribed_pictures:
+        if parsed.has_undescribed_pictures and not parsed.extracted_images:
+            # Docling flagged a picture it couldn't caption but also
+            # couldn't extract as an image (get_image() returned None
+            # or raised) — genuinely lost content, not just unlabeled.
+            # There's still no vision-model fallback to re-describe it
+            # from the raw page; see README's known-limitations section.
             logger.warning(
-                "Upload %s has undescribed pictures — diagram/graph content on those "
-                "pages may be missing from the generated questions. Vision fallback "
-                "for individual pages isn't wired into this pipeline yet; see README.",
+                "Upload %s has undescribed, unextracted pictures — diagram/graph content "
+                "on those pages may be missing entirely from the generated content.",
                 upload_id,
             )
+
+        image_urls: list[str] = []
+        for i, image in enumerate(parsed.extracted_images):
+            try:
+                image_urls.append(db.upload_extracted_image(upload_id, image.local_path, i))
+            except Exception:
+                logger.exception("Failed to upload extracted image %d for upload %s", i, upload_id)
+            finally:
+                image.local_path.unlink(missing_ok=True)
 
         db.update_upload_status(upload_id, "generating")
         result = generate_content(parsed.markdown, upload["requested_question_count"])
@@ -48,7 +61,7 @@ def _run_pipeline(upload_id: str) -> None:
             )
             return
 
-        db.insert_generated_content(upload_id, upload["topic_id"], result)
+        db.insert_generated_content(upload_id, upload["topic_id"], result, extracted_image_urls=image_urls)
         logger.info(
             "Upload %s ready for review: %d questions, %d worked examples",
             upload_id,

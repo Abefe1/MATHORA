@@ -41,6 +41,50 @@ candidate.
 - Base every question strictly on the provided text. Do not invent topics \
 the text doesn't cover.
 
+For each worked_example:
+- solution_steps must be genuinely step-by-step — at least 3 separate steps, \
+each one small, self-contained working (not the whole solution in one \
+paragraph, and not so fine-grained that a step does nothing). A student \
+should be able to follow each step in isolation and see exactly one thing \
+happen (one substitution, one simplification, one rule applied).
+- real_life_context: reframe the SAME problem inside a concrete Nigerian \
+real-world scenario WHENEVER the topic realistically supports one — e.g. \
+Sets/Venn Diagrams -> market survey of which stalls sell rice vs beans; \
+Simple Interest/Arithmetic of Finance -> a real bank/cooperative savings \
+scenario; Mensuration/Volume -> a water tank or classroom's dimensions; \
+Statistics -> class test scores or household sizes on a street; Bearings \
+-> a trip between two named towns. Leave it "" (do not force one) for \
+topics with no natural real-world framing (e.g. simplifying an algebraic \
+fraction, proving an identity, pure logic/set notation).
+- diagram_type + diagram_data: set a diagram_type OTHER than "none" whenever \
+the topic is visual (geometry, trigonometry, coordinate graphs, sets, \
+statistics charts, number lines) — do not force one onto purely algebraic \
+topics. diagram_data's shape depends on diagram_type, exactly:
+  - "number_line": {"min": number, "max": number, "step": number, "points": \
+[{"value": number, "label": string}]}
+  - "venn_diagram": {"setA": {"label": string}, "setB": {"label": string}, \
+"setC": {"label": string} (omit if only 2 sets), "universalLabel": string}
+  - "coordinate_plane": {"xRange": [min, max], "yRange": [min, max], \
+"points": [{"x": number, "y": number, "label": string}], "lines": \
+[{"from": {"x": number, "y": number}, "to": {"x": number, "y": number}, \
+"label": string}]}
+  - "triangle": {"vertices": [{"label": string, "x": number, "y": number}, \
+... exactly 3], "sideLabels": [{"from": string, "to": string, "label": \
+string}], "angleLabels": [{"vertex": string, "label": string}], \
+"rightAngleAt": string (vertex label, omit if not right-angled)}
+  - "circle": {"radiusLabel": string, "centerLabel": string, "points": \
+[{"label": string, "angleDegrees": number}], "highlightSector": \
+{"startAngle": number, "endAngle": number, "label": string}, "chord": \
+{"fromAngle": number, "toAngle": number, "label": string}} (all keys optional)
+  - "unit_circle": {"angleDegrees": number, "showSine": boolean, \
+"showCosine": boolean, "showTangent": boolean}
+  - "bar_chart": {"categories": [string, ...], "values": [number, ...], \
+"yLabel": string}
+  - "pie_chart": {"slices": [{"label": string, "value": number}, ...]}
+  - Never output diagram_type "image" — that value is reserved for figures \
+extracted directly from the source document and is assigned outside this \
+generation step, not by you.
+
 Respond with ONLY a JSON object of this exact shape (no prose, no markdown \
 fences):
 {
@@ -53,16 +97,21 @@ fences):
       "difficulty": integer 1-5,
       "exam_type": "WAEC" | "BECE" | "JAMB" | "NECO" | "GENERAL",
       "explanation": string,
-      "exam_shortcut": string
+      "exam_shortcut": string,
+      "diagram_type": string,
+      "diagram_data": object
     }
   ],
   "worked_examples": [
     {
       "title": string,
       "problem_statement": string,
-      "solution_steps": [string, ...],
+      "solution_steps": [string, string, string, ...],
       "exam_shortcut": string,
-      "common_trap_warning": string
+      "common_trap_warning": string,
+      "real_life_context": string,
+      "diagram_type": string,
+      "diagram_data": object
     }
   ]
 }"""

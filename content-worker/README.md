@@ -21,14 +21,23 @@ Python processes). `mathora-web` calls this over HTTP.
         │  creates a content_uploads row (status='pending')
         │  fires POST /process/{upload_id} at this service (async, doesn't wait)
         ▼
-[content-worker: parser.py]  Docling → Markdown + LaTeX
+[content-worker: parser.py]  Docling → Markdown + LaTeX + extracted figure images
         ▼
-[content-worker: generator.py]  text LLM → structured JSON
+[content-worker: db.py]  uploads any extracted figures to the "lesson-diagrams" bucket
+        ▼
+[content-worker: generator.py]  text LLM → structured JSON (questions + worked
+        │  examples, each with real_life_context and a diagram_type/diagram_data
+        │  pair — see lib/diagramTypes.ts on the web side for the exact contract)
         │  (schema.py validates it against mathora_schema.sql's exact shape)
         ▼
-[content-worker: db.py]  writes questions/worked_examples as status='draft'
+[content-worker: db.py]  writes questions/worked_examples as status='draft';
+        │  attaches any extracted figure to the first worked example that
+        │  doesn't already have a generated diagram
         ▼
 [Admin reviews in mathora-web's /admin "Pending Review" tab, approves or rejects]
+        ▼
+[Approved content renders with StepByStepSolution.tsx's paced reveal and
+ DiagramRenderer.tsx's animated diagram/figure — see student/learn/page.tsx]
 ```
 
 ## Running locally
@@ -54,12 +63,21 @@ your host scales to zero.
 
 ## Known limitations, stated rather than hidden
 
-- **No vision-model fallback wired in yet.** `parser.py` flags when a
-  document has pictures Docling couldn't caption (likely a diagram or
-  graph), and `main.py` logs a warning, but nothing currently re-sends
-  those pages through a vision-capable model (Qwen2.5-VL, etc.) to
-  extract them. That's the next piece to add — `VISION_LLM_MODEL` in
-  `.env.example` is a placeholder for it, unused today.
+- **Figure extraction works; a true vision-model fallback still
+  doesn't.** `parser.py` now actually pulls out pictures Docling
+  found as real PNG files (`PictureItem.get_image()`) and `db.py`
+  uploads them — those get preserved and shown to students via
+  `diagram_type: 'image'` (see `ImageDiagram.tsx`). What's still
+  missing: when Docling can't even extract a picture cleanly (rare,
+  but `get_image()` can return `None` or raise), nothing re-sends that
+  page region through a vision-capable model (Qwen2.5-VL, etc.) to at
+  least transcribe what it shows into text. That page's diagram is
+  then genuinely lost, not just unstyled. `VISION_LLM_MODEL` in
+  `.env.example` is a placeholder for this remaining gap, unused
+  today. `main.py` logs a warning (not silence) whenever this happens
+  so it's visible in the worker's logs, and `content_uploads` itself
+  doesn't record which specific pages were affected — that would be
+  the first thing to add alongside the actual fallback.
 - **Docling's math/formula recognition isn't perfect**, especially on
   scanned/photographed pages vs. clean digital PDFs. This is exactly
   why generated content lands as `status='draft'` and goes through

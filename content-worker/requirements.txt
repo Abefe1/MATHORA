@@ -11,3 +11,5 @@ pydantic>=2.10
 supabase>=2.11
 openai>=1.59
 docling>=2.15
+docling-core>=2.15
+pillow>=11.0
