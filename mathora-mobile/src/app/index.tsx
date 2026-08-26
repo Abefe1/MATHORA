@@ -116,6 +116,22 @@ export default function MathoraHomeScreen() {
             <Text style={styles.linkSub}>2 Gaps Diagnosed</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Parent Corner Highlight Banner */}
+        <TouchableOpacity
+          style={styles.parentBanner}
+          onPress={() => router.push('/parent')}
+          activeOpacity={0.9}
+        >
+          <View style={styles.parentBannerIconBox}>
+            <Text style={{ fontSize: 20 }}>👨‍👩‍👧</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.parentBannerTitle}>DCOMPANION Parent Corner</Text>
+            <Text style={styles.parentBannerSub}>View child weekly mastery, teacher remarks & study limits</Text>
+          </View>
+          <Text style={styles.parentBannerArrow}>→</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -349,5 +365,39 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 11,
     marginTop: 2,
+  },
+  parentBanner: {
+    marginTop: 16,
+    backgroundColor: '#1E1B4B',
+    borderColor: '#4338CA',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  parentBannerIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#312E81',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  parentBannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  parentBannerSub: {
+    color: '#C7D2FE',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  parentBannerArrow: {
+    color: '#818CF8',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

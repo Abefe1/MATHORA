@@ -3,21 +3,27 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-// --- Signature Mathora Brand Mark ---
-export function MathoraMark({ className = 'w-6 h-6', color = 'currentColor' }: { className?: string; color?: string }) {
+// --- Signature DCOMPANION Brand Mark ---
+export function DCompanionMark({ className = 'w-6 h-6', color = 'currentColor' }: { className?: string; color?: string }) {
   return (
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      {/* Exercise Book Outer Frame */}
-      <rect x="2" y="2" width="28" height="28" rx="6" stroke={color} strokeWidth="2.2" strokeOpacity="0.8" />
-      {/* Exercise Book Red/Amber Left Margin */}
-      <line x1="9" y1="2" x2="9" y2="30" stroke="#F59E0B" strokeWidth="1.8" strokeDasharray="3 2" />
-      {/* Integral / Function Curve Accent */}
-      <path d="M14 22C14 22 15.5 10 18 10C20.5 10 21 13 21 16C21 19 21.5 22 24 22" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
-      {/* Square Root Hook */}
-      <path d="M12 16L13.5 18L15 13" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Outer Hex/Rounded Square Glass Container */}
+      <rect x="2" y="2" width="28" height="28" rx="8" stroke={color} strokeWidth="2.2" strokeOpacity="0.9" fill="url(#dcompanion-gradient)" fillOpacity="0.15" />
+      {/* Bold 'D' Arc Motif */}
+      <path d="M9 7H16C21 7 24 10.5 24 16C24 21.5 21 25 16 25H9V7Z" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Internal Math Square Root + Function Curve inside D */}
+      <path d="M12 16L14 18.5L16.5 13.5H20" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <defs>
+        <linearGradient id="dcompanion-gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#F59E0B" />
+          <stop offset="1" stopColor="#6366F1" />
+        </linearGradient>
+      </defs>
     </svg>
   );
 }
+
+export const MathoraMark = DCompanionMark;
 
 // --- Bespoke Math SVG Motifs (Replaces generic rounded icon boxes) ---
 export function MathMotif({ type, className = 'w-5 h-5' }: { type: 'function' | 'angle' | 'checkmark' | 'delta' | 'integral'; className?: string }) {

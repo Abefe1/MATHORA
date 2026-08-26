@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "mathora-mobile",
-    "slug": "mathora-mobile",
+    "name": "DCOMPANION",
+    "slug": "dcompanion-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mathoramobile",
+    "scheme": "dcompanion",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"

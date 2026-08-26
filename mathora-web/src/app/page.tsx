@@ -119,9 +119,15 @@ export default function LandingPage() {
               </Button>
             </Link>
 
+            <Link href="/parent">
+              <Button variant="chalk" size="lg" className="w-full sm:w-auto font-display bg-amber-600 hover:bg-amber-500 shadow-amber-600/20">
+                Parent Corner <Users className="w-5 h-5 text-amber-100" />
+              </Button>
+            </Link>
+
             <Link href="/student/diagnostic">
               <Button variant="outline" size="lg" className="w-full sm:w-auto font-display">
-                Take Diagnostic Placement <Target className="w-5 h-5 text-cyan-400" />
+                Diagnostic Test <Target className="w-5 h-5 text-cyan-400" />
               </Button>
             </Link>
           </motion.div>

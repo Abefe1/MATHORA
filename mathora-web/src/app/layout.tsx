@@ -23,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mathora — Understand. Solve. Master.",
-  description: "Nigerian Mathematics & Further Mathematics learning engine built from a concerned Teacher's classroom experience.",
+  title: "DCOMPANION — D-Math Companion | Understand. Solve. Master.",
+  description: "DCOMPANION is the curriculum-aligned Nigerian Mathematics & Further Mathematics companion connecting students, parents, and teachers.",
 };
 
 export default function RootLayout({
