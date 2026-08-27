@@ -1,0 +1,15 @@
+# Loose (>=) pins rather than exact versions — this file was written
+# without the ability to verify current PyPI release numbers. Run
+# `pip install -r requirements.txt` and then `pip freeze > requirements.lock.txt`
+# to pin exact versions once you've confirmed the install works.
+
+fastapi>=0.115
+uvicorn[standard]>=0.34
+python-multipart>=0.0.20
+python-dotenv>=1.0
+pydantic>=2.10
+supabase>=2.11
+openai>=1.59
+docling>=2.15
+docling-core>=2.15
+pillow>=11.0

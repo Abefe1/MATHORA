@@ -10,9 +10,12 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useBlockScreenCapture } from '@/hooks/useBlockScreenCapture';
+import { reportScreenshotAttempt } from '@/services/screenSecurity';
 
 export default function PracticeScreen() {
   const router = useRouter();
+  useBlockScreenCapture({ onScreenshotDetected: () => reportScreenshotAttempt('practice') });
 
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);

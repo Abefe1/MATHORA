@@ -26,8 +26,24 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Python (content-worker/ has its own .gitignore too, but SYLLABUS/
+# also has standalone scripts (build_topics_seed.py) outside that
+# directory — covering it at the root catches those too, and any
+# future script anywhere else in the repo)
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
 # System & IDE files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.swp
+
+# TypeScript build info (each app's own .gitignore covers this in its
+# own directory; here as a catch-all for any stray one)
+*.tsbuildinfo

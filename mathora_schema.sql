@@ -103,11 +103,27 @@ create table public.worked_examples (
 );
 
 -- 5. QUESTION BANK & MASTERY
+--
+-- Options are stored as four flattened columns (option_a..option_d +
+-- correct_letter) rather than a normalized question_options table.
+-- This matches how mathora-web/src/lib/supabase.ts,
+-- mathora-mobile/src/services/supabaseService.ts, and the shared
+-- Question/QuestionOption types (lib/types.ts) already read and
+-- render questions across both apps — reconciling the schema to the
+-- app's shape rather than the other way around, since the app's data
+-- model spans every question-rendering page on web and mobile while
+-- the schema was still unused by any live project.
 create table public.questions (
   id uuid primary key default gen_random_uuid(),
   topic_id uuid references public.topics(id) on delete cascade not null,
   lesson_id uuid references public.lessons(id) on delete set null,
   question_text text not null,
+  question_latex text,
+  option_a text not null,
+  option_b text not null,
+  option_c text not null,
+  option_d text not null,
+  correct_letter char(1) not null check (correct_letter in ('A', 'B', 'C', 'D')),
   difficulty integer not null default 2 check (difficulty between 1 and 5),
   exam_type exam_type not null default 'GENERAL',
   explanation text not null,
@@ -115,22 +131,15 @@ create table public.questions (
   created_at timestamptz not null default now()
 );
 
-create table public.question_options (
-  id uuid primary key default gen_random_uuid(),
-  question_id uuid references public.questions(id) on delete cascade not null,
-  option_letter char(1) not null, -- 'A', 'B', 'C', 'D'
-  option_text text not null,
-  is_correct boolean not null default false,
-  created_at timestamptz not null default now()
-);
-
 create table public.attempts (
   id uuid primary key default gen_random_uuid(),
   student_id uuid references public.students(id) on delete cascade not null,
   question_id uuid references public.questions(id) on delete cascade not null,
-  selected_option_id uuid references public.question_options(id) on delete cascade,
+  topic_id uuid references public.topics(id) on delete cascade not null,
+  selected_option char(1) not null check (selected_option in ('A', 'B', 'C', 'D')),
   is_correct boolean not null,
-  time_spent_seconds integer default 0,
+  time_taken_seconds integer not null default 0,
+  rescue_mode_triggered boolean not null default false,
   attempted_at timestamptz not null default now()
 );
 
@@ -186,7 +195,7 @@ create table public.assignment_submissions (
 do $$ declare t text; begin
   for t in select unnest(array[
     'users', 'students', 'teachers', 'curricula', 'topics', 'lessons',
-    'worked_examples', 'questions', 'question_options', 'attempts',
+    'worked_examples', 'questions', 'attempts',
     'topic_mastery', 'classes', 'class_students', 'assignments', 'assignment_submissions'
   ]) loop
     execute format('alter table public.%I enable row level security', t);
@@ -194,6 +203,18 @@ do $$ declare t text; begin
 end $$;
 
 -- RLS POLICIES
+--
+-- NOTE: the policies below only check auth.role() = 'authenticated',
+-- i.e. "is anyone logged in" — not "is this the caller's own row".
+-- They are placeholders so the schema is runnable on its own.
+-- mathora_schema_auth_patch.sql MUST be run immediately after this
+-- file (same project) — it drops every policy below and replaces it
+-- with ownership-scoped ones (a student only sees their own data, a
+-- teacher only their own classes, a parent only their own child) plus
+-- the handle_new_user() signup trigger and current_student_id() /
+-- current_teacher_id() helpers those policies depend on. Do not run
+-- this schema against a live project without immediately following it
+-- with the patch.
 create policy "users_select_all" on public.users for select using (auth.role() = 'authenticated');
 create policy "users_update_own" on public.users for update using (auth.uid() = id);
 
@@ -205,7 +226,6 @@ create policy "topics_read_public" on public.topics for select using (true);
 create policy "lessons_read_public" on public.lessons for select using (true);
 create policy "worked_examples_read_public" on public.worked_examples for select using (true);
 create policy "questions_read_public" on public.questions for select using (true);
-create policy "options_read_public" on public.question_options for select using (true);
 
 create policy "attempts_insert_student" on public.attempts for insert with check (auth.role() = 'authenticated');
 create policy "attempts_select_own" on public.attempts for select using (auth.role() = 'authenticated');
@@ -215,3 +235,46 @@ create policy "classes_all" on public.classes for all using (auth.role() = 'auth
 create policy "class_students_all" on public.class_students for all using (auth.role() = 'authenticated');
 create policy "assignments_all" on public.assignments for all using (auth.role() = 'authenticated');
 create policy "assignment_submissions_all" on public.assignment_submissions for all using (auth.role() = 'authenticated');
+
+-- ------------------------------------------
+-- MASTERY AUTO-UPDATE
+-- topic_mastery has no client-facing INSERT/UPDATE policy in the
+-- patch (clients can only SELECT it) — it's derived, not authored.
+-- This trigger recomputes it from attempts as they're inserted, using
+-- attempts.topic_id directly rather than joining through questions.
+-- ------------------------------------------
+
+create or replace function public.update_topic_mastery()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.topic_mastery (student_id, topic_id, total_attempted, total_correct, mastery_percentage, updated_at)
+  values (
+    new.student_id,
+    new.topic_id,
+    1,
+    case when new.is_correct then 1 else 0 end,
+    case when new.is_correct then 100.00 else 0.00 end,
+    now()
+  )
+  on conflict (student_id, topic_id) do update set
+    total_attempted = public.topic_mastery.total_attempted + 1,
+    total_correct = public.topic_mastery.total_correct + (case when new.is_correct then 1 else 0 end),
+    mastery_percentage = round(
+      (public.topic_mastery.total_correct + (case when new.is_correct then 1 else 0 end))::numeric
+      / (public.topic_mastery.total_attempted + 1) * 100,
+      2
+    ),
+    updated_at = now();
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_attempt_recorded on public.attempts;
+create trigger on_attempt_recorded
+  after insert on public.attempts
+  for each row execute function public.update_topic_mastery();

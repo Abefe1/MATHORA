@@ -1,3 +1,6 @@
+import type { DiagramType, DiagramData } from './diagramTypes';
+export type { DiagramType, DiagramData } from './diagramTypes';
+
 export type UserRole =
   | 'student'
   | 'teacher'
@@ -42,6 +45,13 @@ export interface WorkedExample {
   solution_steps: string[];
   exam_shortcut?: string;
   common_trap_warning?: string;
+  // A grounded real-world framing of the same problem (e.g. splitting
+  // a market stall's daily sales for a Sets/Venn Diagram lesson) —
+  // populated "whenever the topic realistically supports one", not
+  // forced onto every example. null/undefined means none was generated.
+  real_life_context?: string | null;
+  diagram_type?: DiagramType;
+  diagram_data?: DiagramData;
 }
 
 export interface Lesson {
@@ -71,6 +81,8 @@ export interface Question {
   explanation: string;
   exam_shortcut?: string;
   options: QuestionOption[];
+  diagram_type?: DiagramType;
+  diagram_data?: DiagramData;
 }
 
 export interface Topic {
@@ -108,4 +120,49 @@ export interface Assignment {
   due_date: string;
   completed?: boolean;
   score?: number;
+}
+
+export type SchoolStatus = 'active' | 'pending' | 'rejected';
+
+export interface School {
+  id: string;
+  name: string;
+  state: string;
+  address?: string | null;
+  status: SchoolStatus;
+  verified: boolean;
+  created_by_teacher_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClassDirectoryEntry {
+  id: string;
+  name: string;
+  class_level: ClassLevel;
+  teacher_id: string;
+  school_id: string;
+  created_at: string;
+}
+
+export interface ClassRosterEntry {
+  id: string;
+  class_id: string;
+  full_name: string;
+  verification_value?: string | null;
+  claimed_by_student_id?: string | null;
+  claimed_at?: string | null;
+  created_at: string;
+}
+
+export type ClassJoinRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ClassJoinRequest {
+  id: string;
+  class_id: string;
+  student_id: string;
+  verification_value?: string | null;
+  status: ClassJoinRequestStatus;
+  decided_at?: string | null;
+  created_at: string;
 }

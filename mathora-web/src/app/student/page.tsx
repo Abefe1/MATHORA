@@ -97,6 +97,21 @@ export default function StudentDashboard() {
 
           {/* Teacher Assignments & Learning Stats */}
           <div className="space-y-6">
+            {/* Join a Class */}
+            <Card variant="paper">
+              <h3 className="text-sm font-display font-bold text-white flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-amber-400" /> Not in a class yet?
+              </h3>
+              <p className="text-xs text-slate-400 mb-3">
+                Search for your school and teacher to request to join their class.
+              </p>
+              <Link href="/student/join-class">
+                <Button variant="outline" size="sm" className="w-full justify-center">
+                  Find My Class
+                </Button>
+              </Link>
+            </Card>
+
             {/* Teacher Assignments */}
             <Card variant="exam">
               <h3 className="text-sm font-display font-bold text-white flex items-center gap-2 mb-3">

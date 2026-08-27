@@ -38,8 +38,8 @@ export default function AppTabs() {
               <TabTrigger name="practice" href="/practice" asChild>
                 <TabButton icon="✏️">Practice</TabButton>
               </TabTrigger>
-              <TabTrigger name="squads" href="/squads" asChild>
-                <TabButton icon="📊">Progress</TabButton>
+              <TabTrigger name="parent" href="/parent" asChild>
+                <TabButton icon="👨‍👩‍👧">Parent</TabButton>
               </TabTrigger>
               <TabTrigger name="settings" href="/settings" asChild>
                 <TabButton icon="👤">Profile</TabButton>

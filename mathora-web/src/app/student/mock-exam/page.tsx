@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
+import NoCopyGuard from '@/components/NoCopyGuard';
 import { INITIAL_TOPICS } from '@/lib/mockData';
 import { Clock, Flag, Award, CheckCircle2, AlertCircle, Play, ChevronRight, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
@@ -130,6 +131,7 @@ export default function MockExamPage() {
                 Question {currentIdx + 1} of {mockQuestions.length}
               </span>
 
+              <NoCopyGuard>
               <MathRenderer content={currentQ.question} className="text-lg font-bold text-slate-900 dark:text-slate-100 my-4" />
 
               <div className="space-y-3 mb-6">
@@ -150,6 +152,7 @@ export default function MockExamPage() {
                   </button>
                 ))}
               </div>
+              </NoCopyGuard>
 
               <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button

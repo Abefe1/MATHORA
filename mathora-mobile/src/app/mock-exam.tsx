@@ -10,9 +10,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MOCK_EXAMS_DATA, Question } from '@/services/dataService';
+import { useBlockScreenCapture } from '@/hooks/useBlockScreenCapture';
+import { reportScreenshotAttempt } from '@/services/screenSecurity';
 
 export default function MockExamScreen() {
   const router = useRouter();
+  useBlockScreenCapture({ onScreenshotDetected: () => reportScreenshotAttempt('mock_exam') });
   const exam = MOCK_EXAMS_DATA[0];
 
   const [examStarted, setExamStarted] = useState(false);

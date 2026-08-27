@@ -5,8 +5,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserRole } from '@/lib/types';
 import { useTheme } from '@/lib/themeContext';
-import { MathoraMark } from '@/components/ui/Primitives';
-import { Settings, Sun, Moon, Monitor, ChevronDown, Check } from 'lucide-react';
+import { useAuth } from '@/lib/authContext';
+import { useOfflineFlush } from '@/lib/useOfflineFlush';
+import { DCompanionMark } from '@/components/ui/Primitives';
+import { Settings, Sun, Moon, Monitor, ChevronDown, Check, LogOut, CloudOff, RefreshCw } from 'lucide-react';
+
+interface NavItem {
+  label: string;
+  href: string;
+  highlight?: boolean;
+  purple?: boolean;
+  parentCorner?: boolean;
+}
 
 interface NavbarProps {
   currentRole?: UserRole;
@@ -18,6 +28,8 @@ interface NavbarProps {
 export default function Navbar({ currentRole = 'student', userName = 'Chidiebere Okafor' }: NavbarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const { pendingCount, syncing } = useOfflineFlush();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
   const toggleTheme = () => {
@@ -27,7 +39,7 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
   };
 
   // Role-specific Navigation Links
-  const getNavLinks = () => {
+  const getNavLinks = (): NavItem[] => {
     switch (currentRole) {
       case 'student':
         return [
@@ -36,7 +48,8 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
           { label: 'Practice', href: '/student/practice', highlight: true },
           { label: 'Mock Exam', href: '/student/mock-exam' },
           { label: 'Why Struggling?', href: '/student/struggling-analysis', purple: true },
-          { label: 'Revision', href: '/student/revision' },
+          { label: 'Squad Chat', href: '/chat' },
+          { label: 'Parent Corner', href: '/parent', parentCorner: true },
           { label: 'Squads', href: '/student/groups' },
         ];
       case 'teacher':
@@ -81,15 +94,15 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
   return (
     <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Mathora Brand Mark */}
+        {/* DCOMPANION Brand Mark */}
         <Link href="/" className="flex items-center gap-3 group">
-          <MathoraMark className="w-8 h-8 text-amber-500 group-hover:scale-105 transition-transform" />
+          <DCompanionMark className="w-8 h-8 text-amber-500 group-hover:scale-105 transition-transform" />
           <div>
             <span className="font-display font-extrabold text-xl tracking-tight text-white block">
-              Mathora
+              DCOMPANION
             </span>
-            <p className="text-[10px] font-mono text-slate-400 tracking-wide">
-              Understand. Solve. Master.
+            <p className="text-[10px] font-mono text-amber-400 tracking-wide font-semibold">
+              D-Math Companion
             </p>
           </div>
         </Link>
@@ -104,6 +117,8 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
               linkStyle = 'text-xs font-bold text-amber-400 flex items-center gap-1';
             } else if (link.purple) {
               linkStyle = 'text-xs font-bold text-cyan-400 transition-colors';
+            } else if (link.parentCorner) {
+              linkStyle = 'text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition-all';
             }
 
             if (isActive) {
@@ -179,9 +194,38 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
                 >
                   Admin CMS {currentRole === 'super_admin' && <Check className="w-3.5 h-3.5 text-slate-400" />}
                 </Link>
+
+                {user && (
+                  <>
+                    <div className="border-t border-slate-800 my-1" />
+                    <button
+                      onClick={() => {
+                        setShowRoleDropdown(false);
+                        signOut();
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-800 flex items-center gap-2 text-rose-400"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Sign Out
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
+
+          {pendingCount > 0 && (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-950/60 border border-amber-800/80 text-amber-300 text-[11px] font-mono font-bold"
+              title={`${pendingCount} practice attempt${pendingCount === 1 ? '' : 's'} saved offline — will sync when back online`}
+            >
+              {syncing ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CloudOff className="w-3.5 h-3.5" />
+              )}
+              <span>{pendingCount} queued</span>
+            </div>
+          )}
 
           <Link href="/student/settings" className="p-2 text-slate-400 hover:text-white rounded-lg">
             <Settings className="w-4 h-4" />

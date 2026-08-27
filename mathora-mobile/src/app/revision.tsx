@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   queueCardUrgent: { borderColor: '#F59E0B', backgroundColor: '#78350F22' },
-  queueHeaderRow: { flexDirection: 'row', justifyBetween: 'space-between', alignItems: 'flex-start', gap: 8 },
+  queueHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
   queueTopic: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold', flex: 1 },
   queueBadge: { fontSize: 10, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   badgeUrgent: { backgroundColor: '#78350F', color: '#FDE68A' },

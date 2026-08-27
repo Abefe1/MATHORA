@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
+import StepByStepSolution from '@/components/StepByStepSolution';
+import DiagramRenderer from '@/components/diagrams/DiagramRenderer';
 import { INITIAL_TOPICS } from '@/lib/mockData';
-import { BookOpen, Sparkles, ChevronRight, CheckCircle2, AlertTriangle, Lightbulb, Play } from 'lucide-react';
+import { BookOpen, Sparkles, ChevronRight, AlertTriangle, Lightbulb, Play, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LearnPage() {
@@ -103,15 +105,24 @@ export default function LearnPage() {
                       <MathRenderer content={ex.problem_statement} className="text-sm font-semibold text-slate-800 dark:text-slate-100 mt-1" />
                     </div>
 
-                    {/* Solution Steps */}
-                    <div className="space-y-2 mb-4">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Step-by-Step Solution:</span>
-                      {ex.solution_steps.map((step, sIdx) => (
-                        <div key={sIdx} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                          <MathRenderer content={step} />
+    {/* Diagram (animated shape/graph, or an extracted source image when the
+                    original document had one — see content-worker's parser.py) */}
+                    <DiagramRenderer type={ex.diagram_type} data={ex.diagram_data} />
+
+                    {/* Real-Life Application, when the generator found one worth including */}
+                    {ex.real_life_context && (
+                      <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-xl p-3 flex items-start gap-2 text-xs text-emerald-900 dark:text-emerald-200 mb-4">
+                        <MapPin className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="font-bold uppercase tracking-wider">Real-Life Application:</strong>
+                          <MathRenderer content={ex.real_life_context} className="mt-0.5" />
                         </div>
-                      ))}
+                      </div>
+                    )}
+
+                    {/* Step-by-Step Solution — revealed one step at a time */}
+                    <div className="mb-4">
+                      <StepByStepSolution steps={ex.solution_steps} />
                     </div>
 
                     {/* Shortcut & Warnings */}

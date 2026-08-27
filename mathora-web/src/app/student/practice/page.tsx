@@ -4,14 +4,17 @@ import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import RescueModeModal from '@/components/RescueModeModal';
+import NoCopyGuard from '@/components/NoCopyGuard';
 import { INITIAL_TOPICS } from '@/lib/mockData';
 import { Question, QuestionOption } from '@/lib/types';
 import { Sparkles, CheckCircle2, XCircle, ArrowRight, RotateCcw, Lightbulb, Award } from 'lucide-react';
 import Link from 'next/link';
 
 import { submitQuestionAttempt } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function PracticePage() {
+  const { user } = useAuth();
   const [currentTopic, setCurrentTopic] = useState(INITIAL_TOPICS[0]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<QuestionOption | null>(null);
@@ -38,8 +41,10 @@ export default function PracticePage() {
       setShowRescueModal(true);
     }
 
+    if (!user) return; // proxy.ts already guards this route, but guard defensively too
+
     submitQuestionAttempt({
-      student_id: 'student-1',
+      student_id: user.id,
       question_id: currentQuestion.id,
       topic_id: currentTopic.id,
       selected_option: selectedOption.letter,
@@ -118,6 +123,7 @@ export default function PracticePage() {
         {/* Question Card */}
         {currentQuestion && (
           <div className="glass-card rounded-3xl p-6 sm:p-8 border border-indigo-100 dark:border-indigo-900/40 shadow-lg relative">
+            <NoCopyGuard>
             <div className="flex items-start gap-3 mb-6">
               <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white font-extrabold text-sm flex items-center justify-center flex-shrink-0">
                 {questionIndex + 1}
@@ -174,6 +180,7 @@ export default function PracticePage() {
                 );
               })}
             </div>
+            </NoCopyGuard>
 
             {/* Action Footer */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
