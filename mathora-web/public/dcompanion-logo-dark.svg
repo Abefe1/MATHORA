@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 180" width="100%" height="100%">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00BAFF"/>
+      <stop offset="100%" stop-color="#0080FF"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BACKGROUND (Transparent by default) -->
+  
+  <g transform="translate(10, 10)">
+    <!-- 1. PROTRACTOR "D" ICON & LETTER -->
+    <g transform="translate(0, 20)">
+      <!-- Outer D shape: Left vertical bar (width 24, height 120), Semi-circle outer radius 60 -->
+      <!-- Vertical spine -->
+      <rect x="10" y="10" width="22" height="120" rx="4" fill="url(#brandGrad)" />
+      <!-- Semi-circle arch -->
+      <path d="M 32 10 L 70 10 A 60 60 0 0 1 70 130 L 32 130 Z" fill="url(#brandGrad)" />
+      <!-- Inner cutout to form D and ruler window -->
+      <path d="M 32 34 L 62 34 A 36 36 0 0 1 62 106 L 32 106 Z" fill="#0F172A" />
+      
+      <!-- Simplified Clean Protractor ticks (0, 45, 90, 135, 180 degrees) -->
+      <g stroke="url(#brandGrad)" stroke-width="3" stroke-linecap="round">
+        <!-- 90 deg center tick -->
+        <line x1="70" y1="70" x2="60" y2="70" />
+        <!-- 45 deg tick -->
+        <line x1="62" y1="42" x2="55" y2="49" />
+        <!-- 135 deg tick -->
+        <line x1="62" y1="98" x2="55" y2="91" />
+        <!-- Center pivot hole indicator -->
+        <circle cx="32" cy="70" r="5" fill="none" stroke="url(#brandGrad)" stroke-width="3" />
+      </g>
+    </g>
+
+    <!-- WORDMARK: COMPANION -->
+    <g fill="#0F172A" font-family="'Inter', 'Montserrat', 'Segoe UI', sans-serif" font-weight="800" font-size="86" letter-spacing="1.5">
+      <!-- C -->
+      <text x="155" y="118">C</text>
+      <!-- O -->
+      <text x="225" y="118">O</text>
+      <!-- M -->
+      <text x="305" y="118">M</text>
+      <!-- P -->
+      <text x="400" y="118">P</text>
+      
+      <!-- INTEGRATED VECTOR DRAFTING COMPASS "A" -->
+      <g transform="translate(470, 20)">
+        <!-- Compass Top Handle/Hinge -->
+        <rect x="37" y="5" width="10" height="14" rx="3" fill="url(#brandGrad)" />
+        <circle cx="42" cy="24" r="11" fill="none" stroke="url(#brandGrad)" stroke-width="7" />
+        
+        <!-- Left Leg -->
+        <path d="M 39 30 L 16 110" stroke="url(#brandGrad)" stroke-width="14" stroke-linecap="round" />
+        <!-- Right Leg -->
+        <path d="M 45 30 L 68 110" stroke="url(#brandGrad)" stroke-width="14" stroke-linecap="round" />
+        
+        <!-- Steel Needle Point & Pencil Point -->
+        <polygon points="13,110 17,110 15,118" fill="#0080FF" />
+        <polygon points="67,110 71,110 69,118" fill="#0080FF" />
+        
+        <!-- Horizontal Adjustment Beam / A Crossbar -->
+        <line x1="24" y1="78" x2="60" y2="78" stroke="url(#brandGrad)" stroke-width="9" stroke-linecap="round" />
+        <circle cx="42" cy="78" r="5" fill="#0F172A" stroke="url(#brandGrad)" stroke-width="3" />
+      </g>
+
+      <!-- N I O N -->
+      <text x="560" y="118">N</text>
+      <text x="635" y="118">I</text>
+      <text x="670" y="118">O</text>
+      <text x="750" y="118">N</text>
+    </g>
+  </g>
+</svg>

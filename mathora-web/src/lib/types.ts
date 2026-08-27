@@ -121,3 +121,48 @@ export interface Assignment {
   completed?: boolean;
   score?: number;
 }
+
+export type SchoolStatus = 'active' | 'pending' | 'rejected';
+
+export interface School {
+  id: string;
+  name: string;
+  state: string;
+  address?: string | null;
+  status: SchoolStatus;
+  verified: boolean;
+  created_by_teacher_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClassDirectoryEntry {
+  id: string;
+  name: string;
+  class_level: ClassLevel;
+  teacher_id: string;
+  school_id: string;
+  created_at: string;
+}
+
+export interface ClassRosterEntry {
+  id: string;
+  class_id: string;
+  full_name: string;
+  verification_value?: string | null;
+  claimed_by_student_id?: string | null;
+  claimed_at?: string | null;
+  created_at: string;
+}
+
+export type ClassJoinRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ClassJoinRequest {
+  id: string;
+  class_id: string;
+  student_id: string;
+  verification_value?: string | null;
+  status: ClassJoinRequestStatus;
+  decided_at?: string | null;
+  created_at: string;
+}

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00C8FF"/>
+      <stop offset="100%" stop-color="#0072FF"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0072FF" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Container background with squircle design -->
+  <rect x="10" y="10" width="180" height="180" rx="44" fill="url(#iconGrad)" filter="url(#shadow)"/>
+  
+  <!-- Combined D Protractor & Compass Symbol -->
+  <g transform="translate(42, 40)" fill="#FFFFFF">
+    <!-- Protractor D Body -->
+    <path d="M 12 10 L 52 10 A 50 50 0 0 1 52 110 L 12 110 Z" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round"/>
+    <!-- Center Pivot Dot -->
+    <circle cx="12" cy="60" r="7" fill="#FFFFFF"/>
+    <!-- Compass Leg accent cutting through center -->
+    <line x1="12" y1="60" x2="88" y2="110" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+    <line x1="88" y1="10" x2="88" y2="110" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

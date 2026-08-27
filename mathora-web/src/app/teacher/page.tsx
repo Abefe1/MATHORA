@@ -1,27 +1,46 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
-import { GraduationCap, Plus, Users, BarChart2 } from 'lucide-react';
+import { GraduationCap, Plus, Users, BarChart2, School as SchoolIcon } from 'lucide-react';
 
-import { createTeacherClassInSupabase } from '@/lib/supabase';
+import { createTeacherClassInSupabase, fetchMyTeacherSchoolId } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
+import type { ClassLevel } from '@/lib/types';
+
+const CLASS_LEVELS: ClassLevel[] = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3'];
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [showClassModal, setShowClassModal] = useState(false);
   const [newClassName, setNewClassName] = useState('');
+  const [newClassLevel, setNewClassLevel] = useState<ClassLevel>('SS2');
   const [classList, setClassList] = useState([
     { id: 'c1', name: 'SS2 Mathematics A', code: 'MATH-SS2A', studentsCount: 42, avgMastery: 74 },
     { id: 'c2', name: 'SS2 Further Maths', code: 'FM-SS2B', studentsCount: 28, avgMastery: 81 }
   ]);
 
+  // null = not checked yet, '' = checked and no school joined, else a
+  // real school_id — only show the "join a school" prompt once we
+  // actually know it's missing, not on every render before the check.
+  const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [schoolChecked, setSchoolChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMyTeacherSchoolId(user.id).then((id) => {
+      setSchoolId(id);
+      setSchoolChecked(true);
+    });
+  }, [user?.id]);
+
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClassName.trim()) return;
-    
-    const createdClass = await createTeacherClassInSupabase(newClassName, user?.id);
+
+    const createdClass = await createTeacherClassInSupabase(newClassName, newClassLevel, user?.id);
     setClassList((prev) => [...prev, createdClass]);
     setNewClassName('');
     setShowClassModal(false);
@@ -45,6 +64,26 @@ export default function TeacherDashboard() {
             <Plus className="w-4 h-4" /> Create New Class
           </Button>
         </div>
+
+        {/* No-school prompt */}
+        {schoolChecked && !schoolId && (
+          <Card variant="paper" className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-950/80 text-amber-400 flex items-center justify-center border border-amber-800 shrink-0">
+                <SchoolIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-display font-bold text-white">Join or create your school</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Your classes aren&apos;t linked to a school yet — students won&apos;t be able to find them by search until you do.
+                </p>
+              </div>
+            </div>
+            <Link href="/teacher/school">
+              <Button variant="chalk" size="sm">Find My School</Button>
+            </Link>
+          </Card>
+        )}
 
         {/* Classes Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -72,6 +111,13 @@ export default function TeacherDashboard() {
                   <p className="text-xl font-extrabold text-emerald-400">{cls.avgMastery}%</p>
                 </div>
               </div>
+
+              <Link
+                href={`/teacher/class/${cls.id}/roster`}
+                className="mt-4 inline-flex items-center gap-1.5 text-xs font-mono font-bold text-amber-400 hover:underline"
+              >
+                Manage Roster &amp; Join Requests
+              </Link>
             </Card>
           ))}
         </div>
@@ -135,6 +181,18 @@ export default function TeacherDashboard() {
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white font-mono"
                   required
                 />
+              </div>
+              <div className="mb-4">
+                <label className="block text-xs font-mono font-bold uppercase text-slate-400 mb-1">Grade / Class Level</label>
+                <select
+                  value={newClassLevel}
+                  onChange={(e) => setNewClassLevel(e.target.value as ClassLevel)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white font-mono"
+                >
+                  {CLASS_LEVELS.map((lvl) => (
+                    <option key={lvl} value={lvl}>{lvl}</option>
+                  ))}
+                </select>
               </div>
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button

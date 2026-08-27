@@ -115,6 +115,14 @@ export default function MathoraHomeScreen() {
             <Text style={styles.linkTitleRed}>⚠ Mistake Analysis</Text>
             <Text style={styles.linkSub}>2 Gaps Diagnosed</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.linkCard}
+            onPress={() => router.push('/find-class')}
+          >
+            <Text style={styles.linkTitle}>🏫 Find My Class</Text>
+            <Text style={styles.linkSub}>Search school & teacher</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Parent Corner Highlight Banner */}
