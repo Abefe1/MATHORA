@@ -113,10 +113,10 @@ export default function AdminSchoolsPage() {
           ))}
         </div>
 
-        {loading && <p className="text-xs text-slate-400">Loading...</p>}
+        {loading && <p className="text-xs text-slate-500 dark:text-slate-400">Loading...</p>}
 
         {!loading && schools.length === 0 && (
-          <p className="text-xs text-slate-400">No schools in this state.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">No schools in this state.</p>
         )}
 
         <div className="space-y-3">

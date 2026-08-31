@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 import {
   searchSchools,
   fetchTeachersAtSchool,
@@ -15,6 +16,8 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
 export default function FindClassScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [step, setStep] = useState<Step>(1);
   const [busy, setBusy] = useState(false);
 
@@ -85,7 +88,7 @@ export default function FindClassScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. Maryland Comprehensive High School"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={colors.textMuted}
               value={schoolQuery}
               onChangeText={setSchoolQuery}
             />
@@ -150,7 +153,7 @@ export default function FindClassScreen() {
             <TextInput
               style={styles.input}
               placeholder="Phone or admission no. (optional)"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={colors.textMuted}
               value={verificationValue}
               onChangeText={setVerificationValue}
             />
@@ -197,31 +200,33 @@ export default function FindClassScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  badge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
-  subtitle: { color: '#94A3B8', fontSize: 12, marginTop: 4, marginBottom: 20 },
-  card: { backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 16, padding: 16 },
-  cardTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold', marginBottom: 6 },
-  input: {
-    backgroundColor: '#090D16', borderColor: '#1E293B', borderWidth: 1, borderRadius: 8,
-    padding: 12, color: '#FFFFFF', fontSize: 14, marginTop: 10, marginBottom: 12,
-  },
-  primaryBtn: { backgroundColor: '#F59E0B', borderRadius: 8, padding: 12, alignItems: 'center' },
-  primaryBtnText: { color: '#090D16', fontSize: 14, fontWeight: 'bold' },
-  resultRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#090D16', borderColor: '#1E293B', borderWidth: 1, borderRadius: 12,
-    padding: 12, marginTop: 10,
-  },
-  resultName: { color: '#FFFFFF', fontSize: 13, fontWeight: 'bold' },
-  arrow: { color: '#64748B', fontSize: 16 },
-  mutedText: { color: '#94A3B8', fontSize: 11, marginTop: 4 },
-  linkText: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
-  emoji: { fontSize: 40, textAlign: 'center', marginBottom: 8 },
-  outcomeTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: 'bold', textAlign: 'center', marginBottom: 6 },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 16 },
+    backBtn: { marginBottom: 12 },
+    backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
+    badge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    title: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+    subtitle: { color: colors.textMuted, fontSize: 12, marginTop: 4, marginBottom: 20 },
+    card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 16 },
+    cardTitle: { color: colors.text, fontSize: 15, fontWeight: 'bold', marginBottom: 6 },
+    input: {
+      backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, borderRadius: 8,
+      padding: 12, color: colors.text, fontSize: 14, marginTop: 10, marginBottom: 12,
+    },
+    primaryBtn: { backgroundColor: '#F59E0B', borderRadius: 8, padding: 12, alignItems: 'center' },
+    primaryBtnText: { color: '#090D16', fontSize: 14, fontWeight: 'bold' },
+    resultRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, borderRadius: 12,
+      padding: 12, marginTop: 10,
+    },
+    resultName: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
+    arrow: { color: colors.textMuted, fontSize: 16 },
+    mutedText: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+    linkText: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
+    emoji: { fontSize: 40, textAlign: 'center', marginBottom: 8 },
+    outcomeTitle: { color: colors.text, fontSize: 17, fontWeight: 'bold', textAlign: 'center', marginBottom: 6 },
+  });
+}

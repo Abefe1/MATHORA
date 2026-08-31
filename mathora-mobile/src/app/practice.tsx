@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,13 +8,18 @@ import {
   SafeAreaView,
   StatusBar,
   Modal,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 import { useBlockScreenCapture } from '@/hooks/useBlockScreenCapture';
 import { reportScreenshotAttempt } from '@/services/screenSecurity';
 
 export default function PracticeScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const scheme = useColorScheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useBlockScreenCapture({ onScreenshotDetected: () => reportScreenshotAttempt('practice') });
 
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export default function PracticeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Top Header */}
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
@@ -159,233 +164,238 @@ export default function PracticeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  backBtn: {
-    marginBottom: 16,
-  },
-  backText: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  questionIndexText: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  questionContainer: {
-    marginBottom: 24,
-  },
-  solveLabelText: {
-    color: '#64748B',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  equationCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-  },
-  equationText: {
-    color: '#0F172A',
-    fontSize: 26,
-    fontWeight: '800',
-    fontFamily: 'monospace',
-    letterSpacing: 1,
-  },
-  optionsList: {
-    gap: 12,
-    marginBottom: 28,
-  },
-  optionCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-  },
-  optionCardSelected: {
-    borderColor: '#2563EB',
-    backgroundColor: '#EFF6FF',
-  },
-  optionCardCorrect: {
-    borderColor: '#10B981',
-    backgroundColor: '#ECFDF5',
-  },
-  optionCardIncorrect: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
-  },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#94A3B8',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioCircleSelected: {
-    borderColor: '#2563EB',
-  },
-  radioInnerDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#2563EB',
-  },
-  optionText: {
-    color: '#0F172A',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  checkBtn: {
-    backgroundColor: '#2563EB',
-    borderRadius: 10,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  checkBtnDisabled: {
-    backgroundColor: '#94A3B8',
-    opacity: 0.6,
-  },
-  checkBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  submittedBox: {
-    alignItems: 'center',
-  },
-  nextQuestionBtn: {
-    backgroundColor: '#10B981',
-    borderRadius: 10,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    width: '100%',
-  },
-  nextQuestionBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: '#00000088',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    borderTopWidth: 3,
-    borderColor: '#EF4444',
-  },
-  mistakeHeaderTag: {
-    color: '#EF4444',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  mistakeTitle: {
-    color: '#0F172A',
-    fontSize: 24,
-    fontWeight: '800',
-    marginTop: 4,
-  },
-  userAnswerText: {
-    color: '#EF4444',
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  issueText: {
-    color: '#64748B',
-    fontSize: 14,
-    marginTop: 2,
-    marginBottom: 16,
-  },
-  breakdownCard: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-  },
-  breakdownStep: {
-    color: '#64748B',
-    fontSize: 12,
-    marginVertical: 2,
-  },
-  breakdownMath: {
-    color: '#0F172A',
-    fontSize: 15,
-    fontFamily: 'monospace',
-    fontWeight: '600',
-    marginVertical: 2,
-  },
-  breakdownMathBold: {
-    color: '#10B981',
-    fontSize: 15,
-    fontFamily: 'monospace',
-    fontWeight: '800',
-    marginVertical: 2,
-  },
-  rememberCallout: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
-  },
-  rememberTitle: {
-    color: '#1D4ED8',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  rememberBody: {
-    color: '#1E40AF',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  trySimilarBtn: {
-    backgroundColor: '#2563EB',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  trySimilarBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    backBtn: {
+      marginBottom: 16,
+    },
+    backText: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    questionIndexText: {
+      color: colors.textMuted,
+      fontSize: 13,
+      fontWeight: '600',
+      marginBottom: 16,
+    },
+    questionContainer: {
+      marginBottom: 24,
+    },
+    solveLabelText: {
+      color: colors.textMuted,
+      fontSize: 14,
+      fontWeight: '600',
+      marginBottom: 8,
+    },
+    equationCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 24,
+      alignItems: 'center',
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+    },
+    equationText: {
+      color: colors.text,
+      fontSize: 26,
+      fontWeight: '800',
+      fontFamily: 'monospace',
+      letterSpacing: 1,
+    },
+    optionsList: {
+      gap: 12,
+      marginBottom: 28,
+    },
+    optionCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.03,
+      shadowRadius: 4,
+    },
+    optionCardSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.warningSurface,
+    },
+    optionCardCorrect: {
+      borderColor: colors.successBorder,
+      backgroundColor: colors.successSurface,
+    },
+    optionCardIncorrect: {
+      borderColor: colors.dangerBorder,
+      backgroundColor: colors.dangerSurface,
+    },
+    radioCircle: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.textMuted,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    radioCircleSelected: {
+      borderColor: colors.primary,
+    },
+    radioInnerDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#F59E0B',
+    },
+    optionText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    checkBtn: {
+      backgroundColor: '#F59E0B',
+      borderRadius: 10,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    checkBtnDisabled: {
+      backgroundColor: colors.textMuted,
+      opacity: 0.6,
+    },
+    checkBtnText: {
+      color: '#090D16',
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    submittedBox: {
+      alignItems: 'center',
+    },
+    nextQuestionBtn: {
+      backgroundColor: '#10B981',
+      borderRadius: 10,
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+      width: '100%',
+    },
+    nextQuestionBtnText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: '#00000088',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      borderTopWidth: 3,
+      borderColor: colors.dangerBorder,
+    },
+    mistakeHeaderTag: {
+      color: colors.dangerText,
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 1,
+    },
+    mistakeTitle: {
+      color: colors.text,
+      fontSize: 24,
+      fontWeight: '800',
+      marginTop: 4,
+    },
+    userAnswerText: {
+      color: colors.dangerText,
+      fontSize: 14,
+      fontWeight: '600',
+      marginTop: 4,
+    },
+    issueText: {
+      color: colors.textMuted,
+      fontSize: 14,
+      marginTop: 2,
+      marginBottom: 16,
+    },
+    breakdownCard: {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 16,
+    },
+    breakdownStep: {
+      color: colors.textMuted,
+      fontSize: 12,
+      marginVertical: 2,
+    },
+    breakdownMath: {
+      color: colors.text,
+      fontSize: 15,
+      fontFamily: 'monospace',
+      fontWeight: '600',
+      marginVertical: 2,
+    },
+    breakdownMathBold: {
+      color: '#10B981',
+      fontSize: 15,
+      fontFamily: 'monospace',
+      fontWeight: '800',
+      marginVertical: 2,
+    },
+    // "Remember" tip callout reuses the same amber advisory-box style as
+    // warning surfaces elsewhere, rather than introducing a second
+    // one-off blue "info" category.
+    rememberCallout: {
+      backgroundColor: colors.warningSurface,
+      borderColor: colors.warningBorder,
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 20,
+    },
+    rememberTitle: {
+      color: colors.warningText,
+      fontSize: 13,
+      fontWeight: '700',
+      marginBottom: 4,
+    },
+    rememberBody: {
+      color: colors.warningText,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    trySimilarBtn: {
+      backgroundColor: '#F59E0B',
+      borderRadius: 10,
+      paddingVertical: 14,
+      alignItems: 'center',
+    },
+    trySimilarBtnText: {
+      color: '#090D16',
+      fontSize: 15,
+      fontWeight: '700',
+    },
+  });
+}

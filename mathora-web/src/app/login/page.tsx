@@ -49,7 +49,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4 font-sans bg-graph-paper">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex items-center justify-center px-4 font-sans bg-graph-paper">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -58,16 +58,16 @@ function LoginForm() {
       >
         <div className="flex items-center justify-center gap-2 mb-8">
           <MathoraMark className="w-7 h-7 text-amber-500" />
-          <span className="font-display font-bold text-lg text-white">Mathora</span>
+          <span className="font-display font-bold text-lg text-slate-900 dark:text-white">Mathora</span>
         </div>
 
         <Card variant="notebook" className="shadow-2xl">
-          <h1 className="font-display text-xl font-bold text-white mb-1">Welcome back</h1>
-          <p className="text-xs text-slate-400 mb-6">Sign in to continue your practice.</p>
+          <h1 className="font-display text-xl font-bold text-slate-900 dark:text-white mb-1">Welcome back</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Sign in to continue your practice.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+              <label htmlFor="email" className="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
                 Email
               </label>
               <input
@@ -77,13 +77,13 @@ function LoginForm() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                 placeholder="you@school.edu.ng"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+              <label htmlFor="password" className="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
                 Password
               </label>
               <input
@@ -93,13 +93,13 @@ function LoginForm() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                className="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 rounded-lg bg-rose-950/60 border border-rose-900 px-3 py-2.5 text-xs text-rose-300">
+              <div className="flex items-start gap-2 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-900 px-3 py-2.5 text-xs text-rose-700 dark:text-rose-300">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -110,9 +110,9 @@ function LoginForm() {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-slate-400 mt-6">
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6">
             New to Mathora?{' '}
-            <Link href="/register" className="font-bold text-amber-400 hover:text-amber-300">
+            <Link href="/register" className="font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300">
               Create an account
             </Link>
           </p>

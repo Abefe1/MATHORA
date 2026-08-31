@@ -315,3 +315,98 @@ export async function joinClassWithCode(code: string): Promise<{ id: string; nam
   if (error || !data) return null;
   return { id: data.id, name: data.name };
 }
+
+// --- Analysis screen stats — mirrors mathora-web/src/lib/supabase.ts's
+// fetchAnalysisStats/fetchMyStudentProfileId exactly (same RLS, no new
+// SQL — attempts_select_own_or_related/topic_mastery_select_own_or_related
+// from mathora_schema_auth_patch.sql already cover both the student's own
+// view and a parent's view of a linked child).
+export interface AnalysisStats {
+  totalAttempted: number;
+  totalCorrect: number;
+  currentStreakDays: number;
+  weeklyPracticedDays: number;
+  practicedWeekdayFlags: boolean[];
+  overallMasteryPercentage: number;
+}
+
+const EMPTY_ANALYSIS_STATS: AnalysisStats = {
+  totalAttempted: 0,
+  totalCorrect: 0,
+  currentStreakDays: 0,
+  weeklyPracticedDays: 0,
+  practicedWeekdayFlags: [false, false, false, false, false, false, false],
+  overallMasteryPercentage: 0,
+};
+
+export async function fetchMyStudentProfileId(authUserId: string): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from('students').select('id').eq('user_id', authUserId).single();
+    if (error || !data) return null;
+    return data.id;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchAnalysisStats(studentProfileId: string): Promise<AnalysisStats> {
+  if (!supabase) return EMPTY_ANALYSIS_STATS;
+  try {
+    const [{ data: attempts }, { data: masteryRows }] = await Promise.all([
+      supabase
+        .from('attempts')
+        .select('is_correct, attempted_at')
+        .eq('student_id', studentProfileId)
+        .order('attempted_at', { ascending: false })
+        .limit(500),
+      supabase.from('topic_mastery').select('mastery_percentage').eq('student_id', studentProfileId),
+    ]);
+
+    const totalAttempted = attempts?.length ?? 0;
+    const totalCorrect = attempts?.filter((a) => a.is_correct).length ?? 0;
+
+    const now = new Date();
+    const dayOfWeek = (now.getDay() + 6) % 7;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - dayOfWeek);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const weeklyDaySet = new Set<string>();
+    const allDaySet = new Set<string>();
+    const practicedWeekdayFlags = [false, false, false, false, false, false, false];
+    (attempts ?? []).forEach((a) => {
+      const d = new Date(a.attempted_at);
+      const key = d.toDateString();
+      allDaySet.add(key);
+      if (d >= startOfWeek) {
+        weeklyDaySet.add(key);
+        practicedWeekdayFlags[(d.getDay() + 6) % 7] = true;
+      }
+    });
+
+    let currentStreakDays = 0;
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+    while (allDaySet.has(cursor.toDateString())) {
+      currentStreakDays += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    const overallMasteryPercentage =
+      masteryRows && masteryRows.length > 0
+        ? Math.round(masteryRows.reduce((sum, m) => sum + (m.mastery_percentage ?? 0), 0) / masteryRows.length)
+        : 0;
+
+    return {
+      totalAttempted,
+      totalCorrect,
+      currentStreakDays,
+      weeklyPracticedDays: weeklyDaySet.size,
+      practicedWeekdayFlags,
+      overallMasteryPercentage,
+    };
+  } catch {
+    return EMPTY_ANALYSIS_STATS;
+  }
+}

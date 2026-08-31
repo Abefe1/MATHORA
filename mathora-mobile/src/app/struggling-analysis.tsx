@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,16 +7,21 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 import { MISCONCEPTIONS_DATA, MisconceptionAnalysis } from '@/services/dataService';
 
 export default function StrugglingAnalysisScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const scheme = useColorScheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#090D16" />
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Text style={styles.backText}>← Back to Dashboard</Text>
@@ -89,58 +94,61 @@ export default function StrugglingAnalysisScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  header: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-  },
-  badgeText: { color: '#EF4444', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', marginTop: 4 },
-  subtitle: { color: '#94A3B8', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  summaryCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  summaryTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', marginBottom: 12 },
-  metricGrid: { flexDirection: 'row', gap: 10 },
-  metricBox: { flex: 1, backgroundColor: '#1E1B4B33', borderRadius: 12, padding: 12, alignItems: 'center' },
-  metricValRed: { color: '#EF4444', fontSize: 22, fontWeight: 'bold' },
-  metricValGreen: { color: '#10B981', fontSize: 22, fontWeight: 'bold' },
-  metricLbl: { color: '#94A3B8', fontSize: 11, marginTop: 2 },
-  sectionTitle: { color: '#F8FAFC', fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
-  miscCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#EF4444',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  topicBadge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  triggerBadge: { backgroundColor: '#7F1D1D', color: '#FCA5A5', fontSize: 9, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  miscTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: 'bold', marginTop: 4, marginBottom: 12 },
-  errorBox: { backgroundColor: '#7F1D1D22', borderColor: '#EF4444', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 10 },
-  boxTagRed: { color: '#FCA5A5', fontSize: 10, fontWeight: 'bold' },
-  errorText: { color: '#FEE2E2', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  correctBox: { backgroundColor: '#064E3B22', borderColor: '#059669', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 10 },
-  boxTagGreen: { color: '#34D399', fontSize: 10, fontWeight: 'bold' },
-  correctText: { color: '#ECFDF5', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  gapBox: { backgroundColor: '#1E1B4B', borderRadius: 10, padding: 10, marginBottom: 14 },
-  gapLabel: { color: '#C7D2FE', fontSize: 11, fontWeight: 'bold' },
-  gapText: { color: '#FDE68A', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  remediateBtn: { backgroundColor: '#EF4444', borderRadius: 12, padding: 14, alignItems: 'center' },
-  remediateBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 16 },
+    backBtn: { marginBottom: 12 },
+    backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
+    header: {
+      // Fixed navy highlight card — see index.tsx's parentBanner note.
+      backgroundColor: '#1E1B4B',
+      borderColor: '#4338CA',
+      borderWidth: 1,
+      borderRadius: 20,
+      padding: 20,
+      marginBottom: 16,
+    },
+    badgeText: { color: '#EF4444', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    title: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', marginTop: 4 },
+    subtitle: { color: '#C7D2FE', fontSize: 13, marginTop: 4, lineHeight: 18 },
+    summaryCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 16,
+    },
+    summaryTitle: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 12 },
+    metricGrid: { flexDirection: 'row', gap: 10 },
+    metricBox: { flex: 1, backgroundColor: colors.surfaceSecondary, borderRadius: 12, padding: 12, alignItems: 'center' },
+    metricValRed: { color: '#EF4444', fontSize: 22, fontWeight: 'bold' },
+    metricValGreen: { color: '#10B981', fontSize: 22, fontWeight: 'bold' },
+    metricLbl: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+    sectionTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+    miscCard: {
+      backgroundColor: colors.surface,
+      borderColor: '#EF4444',
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 16,
+    },
+    cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    topicBadge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    triggerBadge: { backgroundColor: '#7F1D1D', color: '#FCA5A5', fontSize: 9, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+    miscTitle: { color: colors.text, fontSize: 17, fontWeight: 'bold', marginTop: 4, marginBottom: 12 },
+    errorBox: { backgroundColor: colors.dangerSurface, borderColor: colors.dangerBorder, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 10 },
+    boxTagRed: { color: colors.dangerText, fontSize: 10, fontWeight: 'bold' },
+    errorText: { color: colors.text, fontSize: 13, marginTop: 4, lineHeight: 18 },
+    correctBox: { backgroundColor: colors.successSurface, borderColor: colors.successBorder, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 10 },
+    boxTagGreen: { color: colors.successText, fontSize: 10, fontWeight: 'bold' },
+    correctText: { color: colors.text, fontSize: 13, marginTop: 4, lineHeight: 18 },
+    gapBox: { backgroundColor: '#1E1B4B', borderRadius: 10, padding: 10, marginBottom: 14 },
+    gapLabel: { color: '#C7D2FE', fontSize: 11, fontWeight: 'bold' },
+    gapText: { color: '#FDE68A', fontSize: 12, fontWeight: '600', marginTop: 2 },
+    remediateBtn: { backgroundColor: '#EF4444', borderRadius: 12, padding: 14, alignItems: 'center' },
+    remediateBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  });
+}

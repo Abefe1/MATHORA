@@ -1,19 +1,23 @@
 import { Platform } from 'react-native';
 
+// Mirrors mathora-web's actual theme (globals.css / Primitives.tsx / the
+// admin pages' bg-slate-50 dark:bg-slate-950 pairing) — this used to hold
+// a different navy/blue/mint/coral palette that zero screens ever
+// adopted; the values below are canonicalized from the hex literals the
+// mobile screens already hardcode (teacher.tsx, roster.tsx, etc.) so both
+// platforms speak one color language instead of two unrelated ones.
 export const ThemeTokens = {
-  // Brand Tokens
-  brandNavy: '#172554',
-  brandBlue: '#2563EB',
-  brandLight: '#EFF6FF',
-  sky: '#38BDF8',
+  // Brand / role accents — same amber-primary, emerald-secondary,
+  // indigo-tertiary, rose-danger roles used throughout mathora-web.
+  amber: '#F59E0B',    // primary accent, student surfaces, WAEC/streak
+  emerald: '#10B981',  // teacher surfaces, success, mastered
+  indigo: '#6366F1',   // admin/"chalk" accent
+  cyan: '#06B6D4',     // verified badge
+  rose: '#F43F5E',     // danger, struggling, incorrect
+  purple: '#A855F7',   // rescue mode
 
-  // Learning State & Semantic Tokens
-  mint: '#10B981',        // Mastered / Success
-  amber: '#F59E0B',       // XP / Attention / Needs Practice
-  coral: '#F97316',       // Challenges / Streak
-  red: '#EF4444',         // Error / Mistake
-
-  // Light Mode Defaults
+  // Light Mode Defaults — Tailwind slate-50/white/slate-200/slate-900,
+  // matching layout.tsx's bg-slate-50 dark:bg-slate-950 pairing on web.
   light: {
     background: '#F8FAFC',
     surface: '#FFFFFF',
@@ -21,20 +25,29 @@ export const ThemeTokens = {
     border: '#E2E8F0',
     text: '#0F172A',
     textMuted: '#64748B',
-    primary: '#2563EB',
-    headerBg: '#172554',
+    primary: '#D97706',   // amber-600 — same shift web's Navbar/Badge use for light-mode contrast
+    headerBg: '#FFFFFF',
+    // Tinted alert/status surfaces — mirrors web's Badge component's
+    // bg-amber-50/bg-emerald-50/bg-rose-50 (+ matching border) pairing.
+    warningSurface: '#FEF3C7', warningBorder: '#FDE68A', warningText: '#B45309',
+    successSurface: '#ECFDF5', successBorder: '#A7F3D0', successText: '#059669',
+    dangerSurface: '#FEF2F2', dangerBorder: '#FCA5A5', dangerText: '#DC2626',
   },
 
-  // Dark Mode Defaults
+  // Dark Mode Defaults — the exact hex values already hardcoded across
+  // teacher.tsx/roster.tsx/school-search.tsx/find-class.tsx this session.
   dark: {
-    background: '#0B1120',
-    surface: '#111827',
+    background: '#090D16',
+    surface: '#0F172A',
     surfaceSecondary: '#1E293B',
-    border: '#334155',
-    text: '#F8FAFC',
+    border: '#1E293B',
+    text: '#FFFFFF',
     textMuted: '#94A3B8',
-    primary: '#3B82F6',
-    headerBg: '#0F172A',
+    primary: '#F59E0B',   // amber-500 — matches web's dark-mode primary
+    headerBg: '#090D16',
+    warningSurface: '#78350F22', warningBorder: '#B45309', warningText: '#FBBF24',
+    successSurface: '#064E3B22', successBorder: '#059669', successText: '#34D399',
+    dangerSurface: '#7F1D1D22', dangerBorder: '#EF4444', dangerText: '#F87171',
   },
 } as const;
 

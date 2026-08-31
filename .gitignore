@@ -47,3 +47,6 @@ Thumbs.db
 # TypeScript build info (each app's own .gitignore covers this in its
 # own directory; here as a catch-all for any stray one)
 *.tsbuildinfo
+
+# Raw lesson-material archives (large source zips, not deliverables)
+/LESSON MATERIALS/*.zip

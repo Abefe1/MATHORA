@@ -131,31 +131,41 @@ export default function ClassRosterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
       <Navbar currentRole="teacher" userName="Mr. Olanrewaju Bello" />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow">
-        <Link href="/teacher" className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-400 hover:underline mb-4">
+        <Link href="/teacher" className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-600 dark:text-amber-400 hover:underline mb-4">
           <ArrowLeft className="w-3.5 h-3.5" /> Return to Teacher Dashboard
         </Link>
-        <div className="flex justify-center mb-2 sm:justify-start">
-          <Badge variant="bece">Roster Management</Badge>
+        <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
+          <div>
+            <div className="flex justify-center mb-2 sm:justify-start">
+              <Badge variant="bece">Roster Management</Badge>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-900 dark:text-white">
+              Class Roster
+            </h1>
+          </div>
+          <Link
+            href={`/teacher/class/${classId}/scores`}
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-colors"
+          >
+            View Class Scores
+          </Link>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-white mb-8">
-          Class Roster
-        </h1>
 
         {/* Pending join requests */}
         {requests.length > 0 && (
           <Card variant="paper" className="p-6 mb-6">
-            <h2 className="text-sm font-display font-bold text-white mb-4 flex items-center gap-2">
-              <Inbox className="w-4 h-4 text-amber-400" /> Pending Join Requests ({requests.length})
+            <h2 className="text-sm font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Inbox className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Pending Join Requests ({requests.length})
             </h2>
             <div className="space-y-2 font-mono">
               {requests.map((r) => (
-                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800">
+                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                   <div>
-                    <p className="text-xs text-slate-300">Student ID: {r.student_id}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300">Student ID: {r.student_id}</p>
                     {r.verification_value && (
                       <p className="text-[11px] text-slate-500">Supplied: {r.verification_value}</p>
                     )}
@@ -187,8 +197,8 @@ export default function ClassRosterPage() {
         {/* Manual add + bulk upload */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card variant="paper" className="p-6">
-            <h2 className="text-sm font-display font-bold text-white mb-4 flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-amber-400" /> Add One Student
+            <h2 className="text-sm font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Add One Student
             </h2>
             <form onSubmit={handleManualAdd} className="space-y-3 font-mono">
               <input
@@ -196,7 +206,7 @@ export default function ClassRosterPage() {
                 placeholder="Full name"
                 value={manualName}
                 onChange={(e) => setManualName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
                 required
               />
               <input
@@ -204,7 +214,7 @@ export default function ClassRosterPage() {
                 placeholder="Phone or admission no. (optional)"
                 value={manualVerify}
                 onChange={(e) => setManualVerify(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
               />
               <Button variant="primary" size="sm" type="submit" disabled={busy} className="w-full justify-center">
                 Add to Roster
@@ -213,8 +223,8 @@ export default function ClassRosterPage() {
           </Card>
 
           <Card variant="paper" className="p-6">
-            <h2 className="text-sm font-display font-bold text-white mb-4 flex items-center gap-2">
-              <Upload className="w-4 h-4 text-amber-400" /> Bulk Upload (CSV or Excel)
+            <h2 className="text-sm font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Upload className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Bulk Upload (CSV or Excel)
             </h2>
             <p className="text-[11px] text-slate-500 mb-3 font-mono">
               Needs a name column (e.g. &quot;Full Name&quot;). A phone or admission-number column is optional but recommended — it lets students verify their identity when claiming their row.
@@ -223,12 +233,12 @@ export default function ClassRosterPage() {
               type="file"
               accept=".csv,.xlsx,.xls"
               onChange={handleFile}
-              className="w-full text-xs text-slate-300 font-mono file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-amber-500 file:text-slate-950 file:text-xs file:font-bold"
+              className="w-full text-xs text-slate-600 dark:text-slate-300 font-mono file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-amber-500 file:text-slate-950 file:text-xs file:font-bold"
             />
-            {fileError && <p className="text-xs text-rose-400 mt-2">{fileError}</p>}
+            {fileError && <p className="text-xs text-rose-600 dark:text-rose-400 mt-2">{fileError}</p>}
             {filePreview.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs text-emerald-400 font-mono mb-2">{filePreview.length} row(s) ready to import</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-mono mb-2">{filePreview.length} row(s) ready to import</p>
                 <Button variant="chalk" size="sm" onClick={confirmFileImport} disabled={busy} className="w-full justify-center">
                   Confirm Import
                 </Button>
@@ -239,19 +249,19 @@ export default function ClassRosterPage() {
 
         {/* Current roster */}
         <Card variant="paper" className="p-6">
-          <h2 className="text-sm font-display font-bold text-white mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-amber-400" /> Roster ({roster.length})
+          <h2 className="text-sm font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Roster ({roster.length})
           </h2>
-          {loading && <p className="text-xs text-slate-400">Loading...</p>}
-          {!loading && roster.length === 0 && <p className="text-xs text-slate-400">No students added yet.</p>}
-          <div className="divide-y divide-slate-800 font-mono">
+          {loading && <p className="text-xs text-slate-500 dark:text-slate-400">Loading...</p>}
+          {!loading && roster.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">No students added yet.</p>}
+          <div className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
             {roster.map((entry) => (
               <div key={entry.id} className="flex items-center justify-between py-2.5">
-                <span className="text-xs text-slate-200 font-sans">{entry.full_name}</span>
+                <span className="text-xs text-slate-800 dark:text-slate-200 font-sans">{entry.full_name}</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                   entry.claimed_by_student_id
-                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                    : 'bg-slate-900 text-slate-400 border border-slate-800'
+                    ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
                 }`}>
                   {entry.claimed_by_student_id ? 'Claimed' : 'Unclaimed'}
                 </span>

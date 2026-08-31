@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 
 interface Message {
   id: string;
@@ -12,6 +13,8 @@ interface Message {
 
 export default function MobileChatScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', sender: 'Chidiebere Okafor', role: 'student', text: 'Has anyone solved Q4 from the 2024 WAEC mock?', time: '10:14 AM' },
     { id: '2', sender: 'Mr. Bello (Teacher)', role: 'teacher', text: 'Check if b^2 - 4ac > 0 before factoring!', time: '10:16 AM' },
@@ -64,7 +67,7 @@ export default function MobileChatScreen() {
             value={inputText}
             onChangeText={setInputText}
             placeholder="Type a math question or hint..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textMuted}
           />
           <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
             <Text style={styles.sendBtnText}>Send</Text>
@@ -75,57 +78,59 @@ export default function MobileChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  header: {
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderColor: '#1E293B',
-  },
-  backText: { color: '#F59E0B', fontSize: 14, fontWeight: 'bold' },
-  headerTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  headerSub: { color: '#10B981', fontSize: 10, marginTop: 2 },
-  feed: { padding: 16, gap: 12 },
-  msgBubble: {
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
-    padding: 12,
-    borderColor: '#334155',
-    borderWidth: 1,
-  },
-  teacherBubble: {
-    backgroundColor: '#064E3B22',
-    borderColor: '#10B981',
-  },
-  msgHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  senderName: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold' },
-  timeText: { color: '#64748B', fontSize: 10 },
-  msgText: { color: '#F8FAFC', fontSize: 13, lineHeight: 18 },
-  inputRow: {
-    flexDirection: 'row',
-    padding: 12,
-    gap: 8,
-    borderTopWidth: 1,
-    borderColor: '#1E293B',
-    backgroundColor: '#0F172A',
-  },
-  textInput: {
-    flex: 1,
-    backgroundColor: '#1E293B',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: '#FFFFFF',
-    fontSize: 13,
-  },
-  sendBtn: {
-    backgroundColor: '#F59E0B',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  sendBtnText: { color: '#090D16', fontSize: 13, fontWeight: 'bold' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
+    headerTitle: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+    headerSub: { color: '#10B981', fontSize: 10, marginTop: 2 },
+    feed: { padding: 16, gap: 12 },
+    msgBubble: {
+      backgroundColor: colors.surfaceSecondary,
+      borderRadius: 14,
+      padding: 12,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    teacherBubble: {
+      backgroundColor: colors.successSurface,
+      borderColor: '#10B981',
+    },
+    msgHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    senderName: { color: colors.primary, fontSize: 12, fontWeight: 'bold' },
+    timeText: { color: colors.textMuted, fontSize: 10 },
+    msgText: { color: colors.text, fontSize: 13, lineHeight: 18 },
+    inputRow: {
+      flexDirection: 'row',
+      padding: 12,
+      gap: 8,
+      borderTopWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    textInput: {
+      flex: 1,
+      backgroundColor: colors.surfaceSecondary,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      color: colors.text,
+      fontSize: 13,
+    },
+    sendBtn: {
+      backgroundColor: '#F59E0B',
+      borderRadius: 10,
+      paddingHorizontal: 16,
+      justifyContent: 'center',
+    },
+    sendBtnText: { color: '#090D16', fontSize: 13, fontWeight: 'bold' },
+  });
+}

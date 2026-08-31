@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/lib/authContext';
+import { useTheme } from '@/hooks/use-theme';
 import { searchSchools, createOrSuggestSchool, joinSchool, School } from '@/services/supabaseService';
 
 const NIGERIAN_STATES = ['Lagos', 'Ogun', 'Oyo', 'Rivers', 'Kano', 'Kaduna', 'FCT', 'Enugu', 'Anambra', 'Delta', 'Edo', 'Other'];
@@ -9,6 +10,8 @@ const NIGERIAN_STATES = ['Lagos', 'Ogun', 'Oyo', 'Rivers', 'Kano', 'Kaduna', 'FC
 export default function SchoolSearchScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<School[]>([]);
@@ -75,7 +78,7 @@ export default function SchoolSearchScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. Maryland Comprehensive High School"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={colors.textMuted}
               value={query}
               onChangeText={setQuery}
             />
@@ -114,7 +117,7 @@ export default function SchoolSearchScreen() {
             <TextInput
               style={styles.input}
               placeholder="School name"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={colors.textMuted}
               value={newName}
               onChangeText={setNewName}
             />
@@ -160,39 +163,41 @@ export default function SchoolSearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  badge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
-  subtitle: { color: '#94A3B8', fontSize: 12, marginTop: 4, marginBottom: 20 },
-  card: { backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 16, padding: 16 },
-  cardTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold', marginBottom: 10 },
-  input: {
-    backgroundColor: '#090D16', borderColor: '#1E293B', borderWidth: 1, borderRadius: 8,
-    padding: 12, color: '#FFFFFF', fontSize: 14, marginBottom: 12,
-  },
-  primaryBtn: { backgroundColor: '#F59E0B', borderRadius: 8, padding: 12, alignItems: 'center' },
-  primaryBtnText: { color: '#090D16', fontSize: 14, fontWeight: 'bold' },
-  outlineBtn: { borderColor: '#F59E0B', borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
-  outlineBtnText: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold' },
-  resultRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#090D16', borderColor: '#1E293B', borderWidth: 1, borderRadius: 12,
-    padding: 12, marginBottom: 8,
-  },
-  resultName: { color: '#FFFFFF', fontSize: 13, fontWeight: 'bold' },
-  resultState: { color: '#94A3B8', fontSize: 11, marginTop: 2 },
-  mutedText: { color: '#94A3B8', fontSize: 11, marginBottom: 10 },
-  linkText: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
-  stateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  stateChip: { borderColor: '#1E293B', borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  stateChipActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
-  stateChipText: { color: '#94A3B8', fontSize: 11, fontWeight: 'bold' },
-  stateChipTextActive: { color: '#090D16' },
-  errorText: { color: '#F87171', fontSize: 12, marginBottom: 10 },
-  emoji: { fontSize: 40, textAlign: 'center', marginBottom: 8 },
-  outcomeTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 16 },
+    backBtn: { marginBottom: 12 },
+    backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
+    badge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    title: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+    subtitle: { color: colors.textMuted, fontSize: 12, marginTop: 4, marginBottom: 20 },
+    card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 16 },
+    cardTitle: { color: colors.text, fontSize: 15, fontWeight: 'bold', marginBottom: 10 },
+    input: {
+      backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, borderRadius: 8,
+      padding: 12, color: colors.text, fontSize: 14, marginBottom: 12,
+    },
+    primaryBtn: { backgroundColor: '#F59E0B', borderRadius: 8, padding: 12, alignItems: 'center' },
+    primaryBtnText: { color: '#090D16', fontSize: 14, fontWeight: 'bold' },
+    outlineBtn: { borderColor: '#F59E0B', borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+    outlineBtnText: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold' },
+    resultRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, borderRadius: 12,
+      padding: 12, marginBottom: 8,
+    },
+    resultName: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
+    resultState: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+    mutedText: { color: colors.textMuted, fontSize: 11, marginBottom: 10 },
+    linkText: { color: '#F59E0B', fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
+    stateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+    stateChip: { borderColor: colors.border, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+    stateChipActive: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
+    stateChipText: { color: colors.textMuted, fontSize: 11, fontWeight: 'bold' },
+    stateChipTextActive: { color: '#090D16' },
+    errorText: { color: colors.dangerText, fontSize: 12, marginBottom: 10 },
+    emoji: { fontSize: 40, textAlign: 'center', marginBottom: 8 },
+    outcomeTitle: { color: colors.text, fontSize: 17, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  });
+}

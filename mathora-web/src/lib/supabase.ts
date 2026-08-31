@@ -44,17 +44,24 @@ export async function fetchQuestions(topicId?: string): Promise<Question[]> {
 
     return data.map((q) => {
       const correctLetter = q.correct_letter || 'A';
+      const options = [
+        { letter: 'A', text: q.option_a || 'Option A', is_correct: correctLetter === 'A' },
+        { letter: 'B', text: q.option_b || 'Option B', is_correct: correctLetter === 'B' },
+        { letter: 'C', text: q.option_c || 'Option C', is_correct: correctLetter === 'C' },
+        { letter: 'D', text: q.option_d || 'Option D', is_correct: correctLetter === 'D' },
+      ];
+      // A 5th option only exists for curated WAEC/NECO questions that came
+      // with 5 choices (mathora_schema_five_option_patch.sql). Most rows
+      // leave option_e null, so it's appended only when actually present.
+      if (q.option_e) {
+        options.push({ letter: 'E', text: q.option_e, is_correct: correctLetter === 'E' });
+      }
       return {
         id: q.id,
         topic_id: q.topic_id,
         question_text: q.question_text,
         question_latex: q.question_latex || '',
-        options: [
-          { letter: 'A', text: q.option_a || 'Option A', is_correct: correctLetter === 'A' },
-          { letter: 'B', text: q.option_b || 'Option B', is_correct: correctLetter === 'B' },
-          { letter: 'C', text: q.option_c || 'Option C', is_correct: correctLetter === 'C' },
-          { letter: 'D', text: q.option_d || 'Option D', is_correct: correctLetter === 'D' },
-        ],
+        options,
         correct_letter: correctLetter,
         explanation: q.explanation || '',
         difficulty: q.difficulty || 2,
@@ -439,4 +446,256 @@ export async function findOrRequestClassJoin(
   });
   if (error || !data) return null;
   return data as { status: 'joined' | 'already_member' | 'pending' };
+}
+
+// --- Analysis page stats ---
+//
+// No new SQL — attempts_select_own_or_related / topic_mastery_select_own_or_related
+// (mathora_schema_auth_patch.sql) already cover both "my own data" (student
+// viewing themself) and "my child's data" (parent viewing a student they're
+// linked to), so the same query shape works for both callers; the RLS
+// policy is what actually restricts which rows come back.
+export interface AnalysisStats {
+  totalAttempted: number;
+  totalCorrect: number;
+  currentStreakDays: number;
+  weeklyPracticedDays: number; // out of 7, this calendar week (Mon-Sun)
+  /** Which of the 7 days (index 0=Mon..6=Sun) had at least one attempt —
+   * a UI showing "which days" needs this, not just the count, or it'd
+   * have to guess/fabricate which specific days were practiced. */
+  practicedWeekdayFlags: boolean[];
+  overallMasteryPercentage: number;
+}
+
+const EMPTY_ANALYSIS_STATS: AnalysisStats = {
+  totalAttempted: 0,
+  totalCorrect: 0,
+  currentStreakDays: 0,
+  weeklyPracticedDays: 0,
+  practicedWeekdayFlags: [false, false, false, false, false, false, false],
+  overallMasteryPercentage: 0,
+};
+
+// studentProfileId is students.id (the profile PK), not auth.uid() —
+// callers that only have the signed-in user's auth id should resolve it
+// first the same way insertAttemptRow does.
+export async function fetchAnalysisStats(studentProfileId: string): Promise<AnalysisStats> {
+  if (!supabase) return EMPTY_ANALYSIS_STATS;
+  try {
+    // 500 most recent attempts is plenty for a streak/weekly-days
+    // calculation without pulling a student's entire history.
+    const [{ data: attempts }, { data: masteryRows }] = await Promise.all([
+      supabase
+        .from('attempts')
+        .select('is_correct, attempted_at')
+        .eq('student_id', studentProfileId)
+        .order('attempted_at', { ascending: false })
+        .limit(500),
+      supabase.from('topic_mastery').select('mastery_percentage').eq('student_id', studentProfileId),
+    ]);
+
+    const totalAttempted = attempts?.length ?? 0;
+    const totalCorrect = attempts?.filter((a) => a.is_correct).length ?? 0;
+
+    const now = new Date();
+    const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon..6=Sun
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - dayOfWeek);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const weeklyDaySet = new Set<string>();
+    const allDaySet = new Set<string>();
+    const practicedWeekdayFlags = [false, false, false, false, false, false, false];
+    (attempts ?? []).forEach((a) => {
+      const d = new Date(a.attempted_at);
+      const key = d.toDateString();
+      allDaySet.add(key);
+      if (d >= startOfWeek) {
+        weeklyDaySet.add(key);
+        practicedWeekdayFlags[(d.getDay() + 6) % 7] = true;
+      }
+    });
+
+    let currentStreakDays = 0;
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+    while (allDaySet.has(cursor.toDateString())) {
+      currentStreakDays += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    const overallMasteryPercentage =
+      masteryRows && masteryRows.length > 0
+        ? Math.round(masteryRows.reduce((sum, m) => sum + (m.mastery_percentage ?? 0), 0) / masteryRows.length)
+        : 0;
+
+    return {
+      totalAttempted,
+      totalCorrect,
+      currentStreakDays,
+      weeklyPracticedDays: weeklyDaySet.size,
+      practicedWeekdayFlags,
+      overallMasteryPercentage,
+    };
+  } catch {
+    return EMPTY_ANALYSIS_STATS;
+  }
+}
+
+export async function fetchMyStudentProfileId(authUserId: string): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from('students').select('id').eq('user_id', authUserId).single();
+    if (error || !data) return null;
+    return data.id;
+  } catch {
+    return null;
+  }
+}
+
+// --- Score dashboard: per-topic ("per exercise"), per-term cumulative, and
+// per-class cumulative. Built entirely on top of the existing attempts /
+// topic_mastery tables and the topics.term column, no new tables needed.
+
+export interface TopicScore {
+  topic_id: string;
+  topic_title: string;
+  class_level: string;
+  term: number | null;
+  order_index: number;
+  total_attempted: number;
+  total_correct: number;
+  mastery_percentage: number;
+}
+
+// Per-exercise (per-topic) breakdown, in syllabus order, for one student.
+export async function fetchTopicScores(studentProfileId: string): Promise<TopicScore[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('topic_mastery')
+      .select('topic_id, total_attempted, total_correct, mastery_percentage, topics!inner(title, class_level, term, order_index)')
+      .eq('student_id', studentProfileId);
+    if (error || !data) return [];
+    return (data as unknown as Array<{
+      topic_id: string; total_attempted: number; total_correct: number; mastery_percentage: number;
+      topics: { title: string; class_level: string; term: number | null; order_index: number };
+    }>)
+      .map((row) => ({
+        topic_id: row.topic_id,
+        topic_title: row.topics.title,
+        class_level: row.topics.class_level,
+        term: row.topics.term,
+        order_index: row.topics.order_index,
+        total_attempted: row.total_attempted,
+        total_correct: row.total_correct,
+        mastery_percentage: row.mastery_percentage,
+      }))
+      .sort((a, b) => a.order_index - b.order_index);
+  } catch {
+    return [];
+  }
+}
+
+export interface TermSummary {
+  term: number;
+  topics_started: number;
+  total_attempted: number;
+  total_correct: number;
+  average_mastery_percentage: number;
+}
+
+// Cumulative score per term (1/2/3), derived by grouping fetchTopicScores
+// client-side rather than a separate round trip — the per-topic list is
+// small (one row per topic a student has touched) so this stays cheap.
+export async function fetchTermSummaries(studentProfileId: string): Promise<TermSummary[]> {
+  const scores = await fetchTopicScores(studentProfileId);
+  const byTerm = new Map<number, TopicScore[]>();
+  for (const s of scores) {
+    if (s.term == null) continue;
+    if (!byTerm.has(s.term)) byTerm.set(s.term, []);
+    byTerm.get(s.term)!.push(s);
+  }
+  return Array.from(byTerm.entries())
+    .map(([term, rows]) => {
+      const total_attempted = rows.reduce((sum, r) => sum + r.total_attempted, 0);
+      const total_correct = rows.reduce((sum, r) => sum + r.total_correct, 0);
+      const average_mastery_percentage = rows.length
+        ? Math.round(rows.reduce((sum, r) => sum + r.mastery_percentage, 0) / rows.length)
+        : 0;
+      return { term, topics_started: rows.length, total_attempted, total_correct, average_mastery_percentage };
+    })
+    .sort((a, b) => a.term - b.term);
+}
+
+export interface ClassStudentScore {
+  student_id: string;
+  full_name: string;
+  total_attempted: number;
+  total_correct: number;
+  average_mastery_percentage: number;
+}
+
+export interface ClassScoreSummary {
+  students: ClassStudentScore[];
+  class_average_mastery_percentage: number;
+  class_total_attempted: number;
+  class_total_correct: number;
+}
+
+// Cumulative score per class, for a teacher's dashboard: every student in
+// the class, their own cumulative attempted/correct/mastery, plus a class
+// average. class_students is the authoritative membership table (not the
+// roster-entries view, which tracks pre-claim names rather than joined
+// student_id rows).
+export async function fetchClassScoreSummary(classId: string): Promise<ClassScoreSummary> {
+  const empty: ClassScoreSummary = { students: [], class_average_mastery_percentage: 0, class_total_attempted: 0, class_total_correct: 0 };
+  if (!supabase) return empty;
+  try {
+    const { data: members, error: membersError } = await supabase
+      .from('class_students')
+      .select('student_id, students!inner(id, users!inner(full_name))')
+      .eq('class_id', classId);
+    if (membersError || !members || members.length === 0) return empty;
+
+    const rows = members as unknown as Array<{ student_id: string; students: { id: string; users: { full_name: string } } }>;
+    const studentIds = rows.map((r) => r.student_id);
+
+    const { data: masteryRows } = await supabase
+      .from('topic_mastery')
+      .select('student_id, total_attempted, total_correct, mastery_percentage')
+      .in('student_id', studentIds);
+
+    const byStudent = new Map<string, { attempted: number; correct: number; masterySum: number; masteryCount: number }>();
+    for (const m of masteryRows ?? []) {
+      const bucket = byStudent.get(m.student_id) ?? { attempted: 0, correct: 0, masterySum: 0, masteryCount: 0 };
+      bucket.attempted += m.total_attempted;
+      bucket.correct += m.total_correct;
+      bucket.masterySum += m.mastery_percentage;
+      bucket.masteryCount += 1;
+      byStudent.set(m.student_id, bucket);
+    }
+
+    const students: ClassStudentScore[] = rows.map((r) => {
+      const bucket = byStudent.get(r.student_id) ?? { attempted: 0, correct: 0, masterySum: 0, masteryCount: 0 };
+      return {
+        student_id: r.student_id,
+        full_name: r.students.users.full_name,
+        total_attempted: bucket.attempted,
+        total_correct: bucket.correct,
+        average_mastery_percentage: bucket.masteryCount ? Math.round(bucket.masterySum / bucket.masteryCount) : 0,
+      };
+    });
+
+    const class_total_attempted = students.reduce((sum, s) => sum + s.total_attempted, 0);
+    const class_total_correct = students.reduce((sum, s) => sum + s.total_correct, 0);
+    const withMastery = students.filter((s) => s.total_attempted > 0);
+    const class_average_mastery_percentage = withMastery.length
+      ? Math.round(withMastery.reduce((sum, s) => sum + s.average_mastery_percentage, 0) / withMastery.length)
+      : 0;
+
+    return { students, class_average_mastery_percentage, class_total_attempted, class_total_correct };
+  } catch {
+    return empty;
+  }
 }

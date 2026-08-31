@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,22 +8,26 @@ import {
   SafeAreaView,
   Switch,
   StatusBar,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/lib/authContext';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const colors = useTheme();
+  const scheme = useColorScheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [offlineSync, setOfflineSync] = useState(true);
-  const [darkTheme, setDarkTheme] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'Student' | 'Teacher' | 'Parent'>('Student');
 
   const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || 'Signed in';
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Top Header */}
         <View style={styles.header}>
@@ -74,20 +78,16 @@ export default function ProfileScreen() {
             <Switch
               value={offlineSync}
               onValueChange={setOfflineSync}
-              trackColor={{ false: '#CBD5E1', true: '#2563EB' }}
+              trackColor={{ false: colors.border, true: '#F59E0B' }}
             />
           </View>
 
-          <View style={styles.settingRow}>
+          <View style={[styles.settingRow, styles.settingRowLast]}>
             <View>
-              <Text style={styles.settingLabel}>Dark Theme</Text>
-              <Text style={styles.settingSub}>High-contrast math typesetting</Text>
+              <Text style={styles.settingLabel}>Theme</Text>
+              <Text style={styles.settingSub}>Follows your device&apos;s light/dark setting</Text>
             </View>
-            <Switch
-              value={darkTheme}
-              onValueChange={setDarkTheme}
-              trackColor={{ false: '#CBD5E1', true: '#2563EB' }}
-            />
+            <Text style={styles.settingValue}>{scheme === 'dark' ? 'Dark' : 'Light'}</Text>
           </View>
         </View>
 
@@ -105,81 +105,85 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  scrollContent: { padding: 20, paddingBottom: 40 },
-  header: { marginBottom: 20 },
-  title: { color: '#0F172A', fontSize: 24, fontWeight: '800' },
-  subtitle: { color: '#64748B', fontSize: 13, marginTop: 2 },
-  profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-  },
-  avatarCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#EFF6FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatarEmoji: { fontSize: 28 },
-  profileName: { color: '#0F172A', fontSize: 18, fontWeight: '800' },
-  profileLevel: { color: '#2563EB', fontSize: 13, fontWeight: '700', marginTop: 2 },
-  profileSchool: { color: '#64748B', fontSize: 12, marginTop: 4 },
-  sectionTitle: { color: '#0F172A', fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  roleGrid: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-  roleCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  roleCardActive: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
-  roleText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
-  roleTextActive: { color: '#2563EB', fontWeight: '700' },
-  settingsGroup: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  settingLabel: { color: '#0F172A', fontSize: 14, fontWeight: '700' },
-  settingSub: { color: '#64748B', fontSize: 12, marginTop: 2 },
-  signOutBtn: {
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  signOutText: { color: '#EF4444', fontSize: 13, fontWeight: '700' },
-  systemCard: { alignItems: 'center', marginTop: 12 },
-  systemText: { color: '#94A3B8', fontSize: 12, fontWeight: '600' },
-  systemSub: { color: '#CBD5E1', fontSize: 11, marginTop: 2 },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 20, paddingBottom: 40 },
+    header: { marginBottom: 20 },
+    title: { color: colors.text, fontSize: 24, fontWeight: '800' },
+    subtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+    profileCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 20,
+      alignItems: 'center',
+      marginBottom: 24,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+    },
+    avatarCircle: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.surfaceSecondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    avatarEmoji: { fontSize: 28 },
+    profileName: { color: colors.text, fontSize: 18, fontWeight: '800' },
+    profileLevel: { color: colors.primary, fontSize: 13, fontWeight: '700', marginTop: 2 },
+    profileSchool: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
+    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 12 },
+    roleGrid: { flexDirection: 'row', gap: 10, marginBottom: 24 },
+    roleCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    roleCardActive: { backgroundColor: colors.warningSurface, borderColor: colors.primary },
+    roleText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
+    roleTextActive: { color: colors.primary, fontWeight: '700' },
+    settingsGroup: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 24,
+    },
+    settingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderColor: colors.surfaceSecondary,
+    },
+    settingRowLast: { borderBottomWidth: 0 },
+    settingLabel: { color: colors.text, fontSize: 14, fontWeight: '700' },
+    settingSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    settingValue: { color: colors.textMuted, fontSize: 13, fontWeight: '700' },
+    signOutBtn: {
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+      backgroundColor: colors.dangerSurface,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    signOutText: { color: colors.dangerText, fontSize: 13, fontWeight: '700' },
+    systemCard: { alignItems: 'center', marginTop: 12 },
+    systemText: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+    systemSub: { color: colors.border, fontSize: 11, marginTop: 2 },
+  });
+}

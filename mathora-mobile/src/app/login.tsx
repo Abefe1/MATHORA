@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,13 +10,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/services/supabaseService';
 import { registerForPushNotifications } from '@/services/pushNotifications';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const scheme = useColorScheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <View style={styles.content}>
           <Text style={styles.logo}>Mathora</Text>
@@ -58,7 +63,7 @@ export default function LoginScreen() {
             value={email}
             onChangeText={setEmail}
             placeholder="you@school.edu.ng"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
@@ -70,7 +75,7 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder="••••••••"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry
             autoComplete="password"
           />
@@ -78,7 +83,7 @@ export default function LoginScreen() {
           {error && <Text style={styles.errorText}>{error}</Text>}
 
           <TouchableOpacity style={styles.primaryBtn} onPress={handleSignIn} disabled={loading} activeOpacity={0.85}>
-            {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryBtnText}>Sign In</Text>}
+            {loading ? <ActivityIndicator color="#090D16" /> : <Text style={styles.primaryBtnText}>Sign In</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/register')} style={styles.linkRow}>
@@ -92,34 +97,36 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  flex: { flex: 1 },
-  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
-  logo: { fontSize: 20, fontWeight: '800', color: '#172554', textAlign: 'center', marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: '#64748B', marginBottom: 24 },
-  label: { fontSize: 11, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', marginBottom: 6, marginTop: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#0F172A',
-  },
-  errorText: { color: '#EF4444', fontSize: 12, marginTop: 12 },
-  primaryBtn: {
-    backgroundColor: '#2563EB',
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  primaryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  linkRow: { marginTop: 20, alignItems: 'center' },
-  linkText: { fontSize: 13, color: '#64748B' },
-  linkTextBold: { color: '#2563EB', fontWeight: '700' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    flex: { flex: 1 },
+    content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
+    logo: { fontSize: 20, fontWeight: '800', color: colors.primary, textAlign: 'center', marginBottom: 24 },
+    title: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 4 },
+    subtitle: { fontSize: 13, color: colors.textMuted, marginBottom: 24 },
+    label: { fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', marginBottom: 6, marginTop: 12 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 14,
+      color: colors.text,
+    },
+    errorText: { color: colors.dangerText, fontSize: 12, marginTop: 12 },
+    primaryBtn: {
+      backgroundColor: '#F59E0B',
+      borderRadius: 14,
+      paddingVertical: 15,
+      alignItems: 'center',
+      marginTop: 24,
+    },
+    primaryBtnText: { color: '#090D16', fontSize: 14, fontWeight: '800' },
+    linkRow: { marginTop: 20, alignItems: 'center' },
+    linkText: { fontSize: 13, color: colors.textMuted },
+    linkTextBold: { color: colors.primary, fontWeight: '700' },
+  });
+}

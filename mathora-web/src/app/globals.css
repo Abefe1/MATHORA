@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+/* Tailwind v4 is CSS-first (no tailwind.config.js) — without this,
+   `dark:` utilities only ever follow the OS prefers-color-scheme media
+   query. themeContext.tsx toggles a `.dark` class on <html> for the
+   in-app Light/Dark/System picker (student/settings/page.tsx); this
+   line is what makes `dark:` actually respond to that class instead of
+   silently ignoring it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 antialiased min-h-screen selection:bg-amber-500 selection:text-slate-950;
+    @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen selection:bg-amber-500 selection:text-slate-950;
     font-family: var(--font-sans, system-ui, sans-serif);
   }
 
@@ -19,14 +27,22 @@
 /* --- Mathora Exercise Book & Graph Paper Textures --- */
 
 .bg-graph-paper {
-  background-image: 
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark .bg-graph-paper {
+  background-image:
     linear-gradient(to right, rgba(99, 102, 241, 0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(99, 102, 241, 0.06) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
+/* Kept as an explicit alias for the same reason as .paper-card-light. */
 .bg-graph-paper-light {
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
   background-size: 24px 24px;
@@ -47,32 +63,73 @@
   border-top: 3px double rgba(148, 163, 184, 0.3);
 }
 
-/* Distinct Surface Cards */
+/* Distinct Surface Cards — light values are the default (Tailwind's
+   own convention, and how the rest of the app's light: dark:
+   pairing already reads); .dark overrides layer on top. */
 .paper-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+}
+
+.dark .paper-card {
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(51, 65, 85, 0.8);
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
 }
 
+/* Kept as an explicit alias — some pages reference the dark surface
+   directly regardless of theme (e.g. a deliberately dark panel). */
 .paper-card-light {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(203, 213, 225, 0.9);
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
 }
 
+/* Glassmorphism surface used by admin/CMS-style pages
+   (admin/page.tsx, admin/schools/page.tsx, and the student/*
+   light+dark pages) — referenced throughout but never defined. */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 /* Role Specific Surfaces */
 .student-notebook-surface {
+  background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 40%),
+              rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.dark .student-notebook-surface {
   background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.05), transparent 40%),
               rgba(15, 23, 42, 0.95);
   border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .teacher-ledger-surface {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.dark .teacher-ledger-surface {
   background: rgba(15, 23, 42, 0.96);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .parent-report-surface {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+}
+
+.dark .parent-report-surface {
   background: rgba(15, 23, 42, 0.94);
   border: 1px solid rgba(217, 119, 6, 0.3);
 }

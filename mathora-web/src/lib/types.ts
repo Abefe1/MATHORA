@@ -67,7 +67,10 @@ export interface Lesson {
 }
 
 export interface QuestionOption {
-  letter: 'A' | 'B' | 'C' | 'D';
+  // 'E' is optional at the DB level (mathora_schema_five_option_patch.sql).
+  // most questions are still 4-option; a 5th only appears for curated
+  // WAEC/NECO past questions that genuinely came with 5 choices.
+  letter: 'A' | 'B' | 'C' | 'D' | 'E';
   text: string;
   is_correct: boolean;
 }

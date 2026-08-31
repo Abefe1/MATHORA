@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import Papa from 'papaparse';
+import { useTheme } from '@/hooks/use-theme';
 import {
   bulkAddRosterEntries,
   fetchClassRoster,
@@ -33,6 +34,8 @@ function normalizeRows(rows: Record<string, unknown>[]): ParsedRow[] {
 
 export default function RosterScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { classId, className } = useLocalSearchParams<{ classId: string; className?: string }>();
 
   const [roster, setRoster] = useState<ClassRosterEntry[]>([]);
@@ -165,14 +168,14 @@ export default function RosterScreen() {
           <TextInput
             style={styles.input}
             placeholder="Full name"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textMuted}
             value={manualName}
             onChangeText={setManualName}
           />
           <TextInput
             style={styles.input}
             placeholder="Phone or admission no. (optional)"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textMuted}
             value={manualVerify}
             onChangeText={setManualVerify}
           />
@@ -217,37 +220,39 @@ export default function RosterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  badge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 22, fontWeight: 'bold', marginTop: 4, marginBottom: 16 },
-  card: { backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16 },
-  cardTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
-  input: {
-    backgroundColor: '#090D16', borderColor: '#1E293B', borderWidth: 1, borderRadius: 8,
-    padding: 12, color: '#FFFFFF', fontSize: 14, marginBottom: 10,
-  },
-  primaryBtn: { backgroundColor: '#F59E0B', borderRadius: 8, padding: 12, alignItems: 'center', marginTop: 4 },
-  primaryBtnText: { color: '#090D16', fontSize: 13, fontWeight: 'bold' },
-  outlineBtn: { borderColor: '#F59E0B', borderWidth: 1, borderRadius: 8, padding: 12, alignItems: 'center' },
-  outlineBtnText: { color: '#F59E0B', fontSize: 13, fontWeight: 'bold' },
-  mutedText: { color: '#94A3B8', fontSize: 11, marginBottom: 6 },
-  successText: { color: '#34D399', fontSize: 12, marginTop: 10, marginBottom: 6 },
-  requestRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#090D16', borderColor: '#1E293B', borderWidth: 1, borderRadius: 10, padding: 10, marginBottom: 8,
-  },
-  requestText: { color: '#E2E8F0', fontSize: 12 },
-  approveBtn: { backgroundColor: '#10B981', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
-  approveBtnText: { color: '#FFFFFF', fontWeight: 'bold' },
-  rejectBtn: { backgroundColor: '#EF4444', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
-  rejectBtnText: { color: '#FFFFFF', fontWeight: 'bold' },
-  rosterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomColor: '#1E293B', borderBottomWidth: 1 },
-  rosterName: { color: '#E2E8F0', fontSize: 13 },
-  rosterStatus: { fontSize: 10, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
-  claimed: { backgroundColor: '#064E3B', color: '#34D399' },
-  unclaimed: { backgroundColor: '#1E293B', color: '#94A3B8' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 16 },
+    backBtn: { marginBottom: 12 },
+    backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
+    badge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    title: { color: colors.text, fontSize: 22, fontWeight: 'bold', marginTop: 4, marginBottom: 16 },
+    card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16 },
+    cardTitle: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
+    input: {
+      backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, borderRadius: 8,
+      padding: 12, color: colors.text, fontSize: 14, marginBottom: 10,
+    },
+    primaryBtn: { backgroundColor: '#F59E0B', borderRadius: 8, padding: 12, alignItems: 'center', marginTop: 4 },
+    primaryBtnText: { color: '#090D16', fontSize: 13, fontWeight: 'bold' },
+    outlineBtn: { borderColor: '#F59E0B', borderWidth: 1, borderRadius: 8, padding: 12, alignItems: 'center' },
+    outlineBtnText: { color: '#F59E0B', fontSize: 13, fontWeight: 'bold' },
+    mutedText: { color: colors.textMuted, fontSize: 11, marginBottom: 6 },
+    successText: { color: colors.successText, fontSize: 12, marginTop: 10, marginBottom: 6 },
+    requestRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, borderRadius: 10, padding: 10, marginBottom: 8,
+    },
+    requestText: { color: colors.text, fontSize: 12 },
+    approveBtn: { backgroundColor: '#10B981', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    approveBtnText: { color: '#FFFFFF', fontWeight: 'bold' },
+    rejectBtn: { backgroundColor: '#EF4444', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    rejectBtnText: { color: '#FFFFFF', fontWeight: 'bold' },
+    rosterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomColor: colors.border, borderBottomWidth: 1 },
+    rosterName: { color: colors.text, fontSize: 13 },
+    rosterStatus: { fontSize: 10, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
+    claimed: { backgroundColor: colors.successSurface, color: colors.successText },
+    unclaimed: { backgroundColor: colors.surfaceSecondary, color: colors.textMuted },
+  });
+}

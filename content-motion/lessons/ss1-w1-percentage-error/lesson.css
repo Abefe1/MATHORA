@@ -1,0 +1,79 @@
+/* Content layer for this lesson only, the shared shell (stage,
+   controls, overlay, title/outro cards, subtitle) lives in
+   engine/core.css and is untouched here. */
+
+#main{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2vmin;padding:6vmin 6vmin 10vmin;
+  opacity:0;transition:opacity .5s;z-index:2;
+}
+#main.show{opacity:1;}
+
+/* ---- problem card ---- */
+#problemCard{
+  background:var(--panel);border-radius:2vmin;
+  padding:2vmin 3vmin;max-width:92%;text-align:center;
+  box-shadow:0 8px 22px rgba(20,50,90,.12);
+  opacity:0;transform:scale(.85);
+  transition:transform .45s cubic-bezier(.2,1.4,.4,1),opacity .35s;
+}
+#problemCard.show{opacity:1;transform:scale(1);}
+#problemCard .icons{font-size:clamp(20px,4vmin,42px);letter-spacing:.15em;margin-bottom:.4em;}
+#problemCard .text{font-size:clamp(14px,2.3vmin,23px);font-weight:600;color:var(--ink);line-height:1.4;}
+#problemCard .formula{
+  margin-top:.5em;font-size:clamp(18px,3.8vmin,38px);font-weight:800;color:var(--blue-dark);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ---- step rail ---- */
+#stepList{
+  display:flex;flex-direction:column;gap:1.1vmin;width:min(92%, 900px);
+}
+.step-tile{
+  display:flex;align-items:center;gap:1.6vmin;
+  background:var(--panel-soft);border-radius:1.6vmin;
+  padding:1vmin 2vmin;
+  opacity:0;transform:translateX(-3vmin) scale(.9);
+  transition:transform .4s cubic-bezier(.2,1.4,.4,1),opacity .35s,box-shadow .3s;
+}
+.step-tile.show{opacity:1;transform:translateX(0) scale(1);}
+.step-tile.active{box-shadow:0 0 0 .5vmin rgba(28,94,168,.35),0 8px 20px rgba(20,50,90,.15);}
+.step-tile .num{
+  flex:none;width:5vmin;height:5vmin;border-radius:50%;
+  background:var(--blue);color:#fff;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(14px,2.2vmin,22px);
+}
+.step-tile .body{flex:1;min-width:0;}
+.step-tile .label{
+  font-size:clamp(10px,1.5vmin,14px);font-weight:700;color:var(--blue);
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.step-tile .caption{font-size:clamp(12px,1.9vmin,18px);font-weight:600;color:var(--ink);}
+.step-tile .formula{
+  margin-top:.15em;font-size:clamp(15px,2.8vmin,26px);font-weight:800;color:var(--blue-dark);
+  font-variant-numeric:tabular-nums;
+  opacity:0;transform:scale(.5);
+  transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .3s;
+}
+.step-tile .formula.show{opacity:1;transform:scale(1);}
+.step-tile .formula.pop{animation:tilePop .45s cubic-bezier(.2,1.4,.4,1);}
+@keyframes tilePop{0%{transform:scale(.6);}60%{transform:scale(1.14);}100%{transform:scale(1);}}
+
+/* ---- callouts (real-life / shortcut / trap) ---- */
+#callouts{
+  display:flex;flex-direction:column;gap:1vmin;width:min(92%, 900px);
+}
+.callout{
+  display:flex;align-items:flex-start;gap:1.2vmin;
+  border-radius:1.4vmin;padding:1vmin 1.8vmin;
+  font-size:clamp(11px,1.7vmin,16px);font-weight:600;color:var(--ink);
+  opacity:0;transform:translateY(1.5vmin);
+  transition:transform .4s cubic-bezier(.2,1.4,.4,1),opacity .35s;
+}
+.callout.show{opacity:1;transform:translateY(0);}
+.callout .ico{flex:none;font-size:1.4em;line-height:1;}
+.callout.real{background:#eaf7f0;border-left:.5vmin solid var(--green);}
+.callout.shortcut{background:#fdf3e2;border-left:.5vmin solid var(--amber);}
+.callout.trap{background:#fbe9e7;border-left:.5vmin solid var(--red);}
