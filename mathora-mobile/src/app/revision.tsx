@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function RevisionScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const reviewsDue = [
     { topic: 'Quadratic Discriminant & Real Roots', interval: 'Due Today (Day 3)', count: 2, urgent: true },
@@ -58,36 +61,38 @@ export default function RevisionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  header: { marginBottom: 16 },
-  badge: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginTop: 2 },
-  subtitle: { color: '#94A3B8', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  metricRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  metricBox: { flex: 1, backgroundColor: '#1E1B4B', borderRadius: 12, padding: 14, alignItems: 'center' },
-  metricVal: { color: '#F59E0B', fontSize: 24, fontWeight: 'bold' },
-  metricValGreen: { color: '#10B981', fontSize: 24, fontWeight: 'bold' },
-  metricLbl: { color: '#C7D2FE', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  sectionHeader: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
-  queueCard: {
-    backgroundColor: '#0F172A',
-    borderColor: '#1E293B',
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
-  },
-  queueCardUrgent: { borderColor: '#F59E0B', backgroundColor: '#78350F22' },
-  queueHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
-  queueTopic: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold', flex: 1 },
-  queueBadge: { fontSize: 10, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  badgeUrgent: { backgroundColor: '#78350F', color: '#FDE68A' },
-  badgeNormal: { backgroundColor: '#1E293B', color: '#94A3B8' },
-  queueSub: { color: '#94A3B8', fontSize: 12, marginTop: 4, marginBottom: 12 },
-  reviewBtn: { backgroundColor: '#F59E0B', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  reviewBtnText: { color: '#090D16', fontSize: 13, fontWeight: 'bold' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 16 },
+    backBtn: { marginBottom: 12 },
+    backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
+    header: { marginBottom: 16 },
+    badge: { color: colors.primary, fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    title: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginTop: 2 },
+    subtitle: { color: colors.textMuted, fontSize: 13, marginTop: 4, lineHeight: 18 },
+    metricRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+    metricBox: { flex: 1, backgroundColor: '#1E1B4B', borderRadius: 12, padding: 14, alignItems: 'center' },
+    metricVal: { color: '#F59E0B', fontSize: 24, fontWeight: 'bold' },
+    metricValGreen: { color: '#10B981', fontSize: 24, fontWeight: 'bold' },
+    metricLbl: { color: '#C7D2FE', fontSize: 11, fontWeight: '600', marginTop: 2 },
+    sectionHeader: { color: colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+    queueCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 12,
+    },
+    queueCardUrgent: { borderColor: colors.warningBorder, backgroundColor: colors.warningSurface },
+    queueHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
+    queueTopic: { color: colors.text, fontSize: 15, fontWeight: 'bold', flex: 1 },
+    queueBadge: { fontSize: 10, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+    badgeUrgent: { backgroundColor: colors.warningBorder, color: colors.warningText },
+    badgeNormal: { backgroundColor: colors.surfaceSecondary, color: colors.textMuted },
+    queueSub: { color: colors.textMuted, fontSize: 12, marginTop: 4, marginBottom: 12 },
+    reviewBtn: { backgroundColor: '#F59E0B', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+    reviewBtnText: { color: '#090D16', fontSize: 13, fontWeight: 'bold' },
+  });
+}

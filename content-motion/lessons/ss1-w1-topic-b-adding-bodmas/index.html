@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adding Directed Numbers and BODMAS, MATHORA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../engine/core.css">
+<link rel="stylesheet" href="lesson.css">
+</head>
+<body>
+<div id="stage">
+  <!-- control bar (shared shell) -->
+  <div id="ctlbar">
+    <button class="ctl" id="btnPrev" title="Previous step">⏮</button>
+    <button class="ctl" id="btnPP" title="Play / pause">⏸</button>
+    <button class="ctl" id="btnNext" title="Next step">⏭</button>
+    <select class="ctl" id="selSpeed" title="Speed">
+      <option value="1">1.0×</option>
+      <option value="1.25">1.25×</option>
+      <option value="1.5">1.5×</option>
+      <option value="2">2.0×</option>
+    </select>
+    <button class="ctl" id="btnGender" title="Boy / girl voice">👦</button>
+    <button class="ctl" id="btnSub" title="Show / hide captions">CC</button>
+    <div class="ctl" id="status">⏸ paused</div>
+  </div>
+
+  <!-- lesson content layer: this lesson covers a full topic (concept, real-life
+       examples, speed tips, worked examples), not a single problem, so #main
+       holds several content sections rather than one problemCard + stepList. -->
+  <div id="main">
+    <div id="conceptArea"></div>
+    <div id="realLifeArea">
+      <div class="area-kicker">🌍 Real life</div>
+      <div id="realLifeList"></div>
+    </div>
+    <div id="tipsArea">
+      <div class="area-kicker">⚡ Speed tips</div>
+      <ul id="tipsList"></ul>
+    </div>
+    <div id="examplesArea"></div>
+  </div>
+
+  <!-- title card (shared shell) -->
+  <div class="card" id="title">
+    <div class="kicker"></div>
+    <div class="big"></div>
+  </div>
+
+  <!-- outro card (shared shell) -->
+  <div class="card" id="outro">
+    <div class="star">🌟</div>
+    <div class="name">Great job!</div>
+    <button id="replay">🔁 Replay</button>
+  </div>
+
+  <div id="subtitle"></div>
+
+  <!-- start overlay (shared shell) -->
+  <div id="overlay">
+    <div class="ask">Who's learning today? 👦👧</div>
+    <div style="display:flex;gap:2.5vmin;">
+      <button class="genderbtn" id="pickBoy">👦 Boy voice</button>
+      <button class="genderbtn" id="pickGirl">👧 Girl voice</button>
+    </div>
+    <button id="playBtn" title="Play"></button>
+    <div class="hint" id="startHint">Pick a voice to begin</div>
+  </div>
+</div>
+
+<script src="../../engine/core.js"></script>
+<script src="lesson.js"></script>
+</body>
+</html>

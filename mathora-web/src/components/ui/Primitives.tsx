@@ -77,19 +77,22 @@ export function Card({ variant = 'paper', className = '', children, ...props }: 
 
   switch (variant) {
     case 'notebook':
+      // student-notebook-surface/teacher-ledger-surface/parent-report-surface/
+      // paper-card already theme themselves via a `.dark &` override in
+      // globals.css — only the plain Tailwind border utility needs a pair here.
       baseStyle += ' student-notebook-surface notebook-margin shadow-lg';
       break;
     case 'ledger':
-      baseStyle += ' teacher-ledger-surface rounded-xl border-emerald-900/60 shadow-md';
+      baseStyle += ' teacher-ledger-surface rounded-xl border-emerald-200 dark:border-emerald-900/60 shadow-md';
       break;
     case 'report':
-      baseStyle += ' parent-report-surface rounded-2xl border-amber-900/40 shadow-md';
+      baseStyle += ' parent-report-surface rounded-2xl border-amber-200 dark:border-amber-900/40 shadow-md';
       break;
     case 'exam':
-      baseStyle += ' bg-slate-900/90 rounded-xl border-slate-700 exam-double-rule shadow-xl';
+      baseStyle += ' bg-white/90 dark:bg-slate-900/90 rounded-xl border-slate-300 dark:border-slate-700 exam-double-rule shadow-xl';
       break;
     default:
-      baseStyle += ' paper-card rounded-2xl border-slate-800 shadow-lg';
+      baseStyle += ' paper-card rounded-2xl border-slate-200 dark:border-slate-800 shadow-lg';
       break;
   }
 
@@ -114,17 +117,21 @@ export function Button({ variant = 'primary', size = 'md', className = '', child
   if (size === 'sm') sizeStyle = 'px-3 py-1.5 text-[11px] font-bold';
   if (size === 'lg') sizeStyle = 'px-7 py-3.5 text-sm font-extrabold';
 
+  // primary/chalk/danger are solid-fill and already contrast correctly
+  // against both a light and dark page background, so they don't need
+  // dark: pairs; secondary/outline are the two that read directly off
+  // the surrounding slate scale and do.
   let variantStyle = 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-md shadow-amber-500/20';
 
   switch (variant) {
     case 'secondary':
-      variantStyle = 'bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700';
+      variantStyle = 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700';
       break;
     case 'chalk':
       variantStyle = 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-500/20';
       break;
     case 'outline':
-      variantStyle = 'bg-transparent text-slate-200 hover:bg-slate-800/80 border border-slate-700';
+      variantStyle = 'bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-300 dark:border-slate-700';
       break;
     case 'danger':
       variantStyle = 'bg-rose-600 text-white hover:bg-rose-500';
@@ -155,22 +162,22 @@ export function Badge({
 
   switch (variant) {
     case 'waec':
-      badgeStyle += ' bg-amber-950/80 text-amber-300 border-amber-800/80';
+      badgeStyle += ' bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800/80';
       break;
     case 'bece':
-      badgeStyle += ' bg-indigo-950/80 text-indigo-300 border-indigo-800/80';
+      badgeStyle += ' bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800/80';
       break;
     case 'mastered':
-      badgeStyle += ' bg-emerald-950/80 text-emerald-300 border-emerald-800/80';
+      badgeStyle += ' bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/80';
       break;
     case 'struggling':
-      badgeStyle += ' bg-rose-950/80 text-rose-300 border-rose-800/80';
+      badgeStyle += ' bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800/80';
       break;
     case 'verified':
-      badgeStyle += ' bg-cyan-950/80 text-cyan-300 border-cyan-800/80';
+      badgeStyle += ' bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/80 dark:text-cyan-300 dark:border-cyan-800/80';
       break;
     case 'rescue':
-      badgeStyle += ' bg-purple-950/80 text-purple-300 border-purple-800/80';
+      badgeStyle += ' bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/80 dark:text-purple-300 dark:border-purple-800/80';
       break;
   }
 

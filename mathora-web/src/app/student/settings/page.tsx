@@ -134,9 +134,9 @@ export default function SettingsPage() {
               </div>
 
               {pushStatus === 'loading' ? (
-                <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                <Loader2 className="w-5 h-5 text-slate-500 dark:text-slate-400 animate-spin" />
               ) : pushStatus === 'unsupported' ? (
-                <span className="text-xs text-slate-400 font-mono">Unsupported</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Unsupported</span>
               ) : (
                 <button
                   onClick={handleTogglePush}

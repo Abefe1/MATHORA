@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-
-const { width } = Dimensions.get('window');
+import { useTheme } from '@/hooks/use-theme';
 
 const slides = [
   {
@@ -37,6 +36,8 @@ const slides = [
 
 export default function MobileOnboardingScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const handleNext = () => {
@@ -88,34 +89,36 @@ export default function MobileOnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  header: { padding: 20, alignItems: 'flex-end' },
-  skipText: { color: '#94A3B8', fontSize: 14, fontWeight: 'bold' },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  badge: { color: '#F59E0B', fontSize: 11, fontWeight: 'bold', letterSpacing: 1, marginBottom: 8 },
-  title: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 12 },
-  desc: { color: '#94A3B8', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
-  dotsRow: { flexDirection: 'row', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#1E293B' },
-  activeDot: { width: 24, backgroundColor: '#F59E0B' },
-  footer: { padding: 24 },
-  nextBtn: {
-    backgroundColor: '#F59E0B',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  nextBtnText: { color: '#090D16', fontSize: 16, fontWeight: 'bold' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { padding: 20, alignItems: 'flex-end' },
+    skipText: { color: colors.textMuted, fontSize: 14, fontWeight: 'bold' },
+    content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+    iconCircle: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      backgroundColor: '#1E1B4B',
+      borderColor: '#4338CA',
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 24,
+    },
+    badge: { color: '#F59E0B', fontSize: 11, fontWeight: 'bold', letterSpacing: 1, marginBottom: 8 },
+    title: { color: colors.text, fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 12 },
+    desc: { color: colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+    dotsRow: { flexDirection: 'row', gap: 8 },
+    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.surfaceSecondary },
+    activeDot: { width: 24, backgroundColor: '#F59E0B' },
+    footer: { padding: 24 },
+    nextBtn: {
+      backgroundColor: '#F59E0B',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    nextBtnText: { color: '#090D16', fontSize: 16, fontWeight: 'bold' },
+  });
+}

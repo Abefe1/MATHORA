@@ -1,29 +1,71 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import RescueModeModal from '@/components/RescueModeModal';
 import NoCopyGuard from '@/components/NoCopyGuard';
-import { INITIAL_TOPICS } from '@/lib/mockData';
-import { Question, QuestionOption } from '@/lib/types';
+import { Question, QuestionOption, Topic, ClassLevel } from '@/lib/types';
 import { Sparkles, CheckCircle2, XCircle, ArrowRight, RotateCcw, Lightbulb, Award } from 'lucide-react';
 import Link from 'next/link';
 
-import { submitQuestionAttempt } from '@/lib/supabase';
+import { fetchTopics, fetchQuestions, submitQuestionAttempt } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
+
+// See student/learn/page.tsx for the same term-grouping convention and the
+// same TODO on making the level dynamic off the student's own profile.
+const DEFAULT_LEVEL: ClassLevel = 'SS1';
+
+function termOf(topic: Topic): number {
+  const term = Math.floor(topic.order_index / 100);
+  return term >= 1 && term <= 3 ? term : 1;
+}
 
 export default function PracticePage() {
   const { user } = useAuth();
-  const [currentTopic, setCurrentTopic] = useState(INITIAL_TOPICS[0]);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [activeTerm, setActiveTerm] = useState(1);
+  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<QuestionOption | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [showRescueModal, setShowRescueModal] = useState(false);
   const [score, setScore] = useState(0);
 
-  const questions = currentTopic.questions;
-  const currentQuestion: Question = questions[questionIndex];
+  useEffect(() => {
+    fetchTopics().then((data) => {
+      const levelTopics = data
+        .filter((t) => t.class_level === DEFAULT_LEVEL)
+        .sort((a, b) => a.order_index - b.order_index);
+      const list = levelTopics.length > 0 ? levelTopics : data;
+      setTopics(list);
+      if (list[0]) {
+        setCurrentTopic(list[0]);
+        setActiveTerm(termOf(list[0]));
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!currentTopic) return;
+    fetchQuestions(currentTopic.id).then(setQuestions);
+  }, [currentTopic]);
+
+  const termGroups = useMemo(() => {
+    const groups = new Map<number, Topic[]>();
+    for (const t of topics) {
+      const term = termOf(t);
+      if (!groups.has(term)) groups.set(term, []);
+      groups.get(term)!.push(t);
+    }
+    return groups;
+  }, [topics]);
+  const topicsInActiveTerm = termGroups.get(activeTerm) ?? [];
+
+  const currentQuestion: Question | undefined = questions[questionIndex];
 
   const handleSelectOption = (opt: QuestionOption) => {
     if (isAnswerSubmitted) return;
@@ -31,7 +73,7 @@ export default function PracticePage() {
   };
 
   const handleSubmitAnswer = () => {
-    if (!selectedOption) return;
+    if (!selectedOption || !currentQuestion || !currentTopic) return;
     setIsAnswerSubmitted(true);
     const isCorrect = selectedOption.is_correct;
 
@@ -76,36 +118,61 @@ export default function PracticePage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Topic Selector Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2.5 py-1 rounded-md">
-              SS2 Practice & Remediation Engine
-            </span>
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
-              {currentTopic.title}
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {INITIAL_TOPICS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setCurrentTopic(t);
-                  handleResetQuiz();
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  t.id === currentTopic.id
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-indigo-600 border border-slate-200 dark:border-slate-800'
-                }`}
-              >
-                {t.title.split(' ')[0]}
-              </button>
-            ))}
-          </div>
+        <div className="mb-4">
+          <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2.5 py-1 rounded-md">
+            {DEFAULT_LEVEL} Practice &amp; Remediation Engine
+          </span>
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
+            {currentTopic?.title ?? (loading ? 'Loading...' : 'No topic selected')}
+          </h1>
         </div>
 
+        {/* Term tabs, then the weeks within that term, both horizontally
+            scrollable on mobile so 33 topics never force a layout squeeze. */}
+        <div className="flex gap-2 mb-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {[1, 2, 3].map((term) => (
+            <button
+              key={term}
+              onClick={() => setActiveTerm(term)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTerm === term
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-indigo-600 border border-slate-200 dark:border-slate-800'
+              }`}
+            >
+              Term {term}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
+          {topicsInActiveTerm.map((t, i) => (
+            <button
+              key={t.id}
+              onClick={() => {
+                setCurrentTopic(t);
+                handleResetQuiz();
+              }}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                t.id === currentTopic?.id
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-indigo-600 border border-slate-200 dark:border-slate-800'
+              }`}
+            >
+              Wk {i + 1}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400">Loading practice questions...</p>
+        ) : questions.length === 0 ? (
+          <div className="glass-card rounded-2xl p-6 text-center border border-slate-200 dark:border-slate-800">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              No published questions for this week yet.
+            </p>
+          </div>
+        ) : (
+        <>
         {/* Progress Bar */}
         <div className="glass-card rounded-2xl p-4 mb-6 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
@@ -234,6 +301,8 @@ export default function PracticePage() {
               setSelectedOption(null);
             }}
           />
+        )}
+        </>
         )}
       </main>
     </div>

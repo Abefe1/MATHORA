@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,12 +8,17 @@ import {
   SafeAreaView,
   TextInput,
   StatusBar,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 import { TOPICS_DATA, Topic, Lesson } from '@/services/dataService';
 
 export default function LearnScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const scheme = useColorScheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedClass, setSelectedClass] = useState<'ALL' | 'SS1' | 'SS2' | 'SS3'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>('t-quadratics');
@@ -29,7 +34,7 @@ export default function LearnScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Top Header */}
         <View style={styles.header}>
@@ -44,7 +49,7 @@ export default function LearnScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search topics (e.g. Quadratics, Sine rule...)"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -109,8 +114,8 @@ export default function LearnScreen() {
                         topic.mastery_percentage >= 80
                           ? '#10B981'
                           : topic.mastery_percentage >= 50
-                          ? '#2563EB'
-                          : '#F59E0B',
+                          ? '#F59E0B'
+                          : '#F43F5E',
                     },
                   ]}
                 />
@@ -191,75 +196,77 @@ export default function LearnScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  scrollContent: { padding: 20, paddingBottom: 40 },
-  header: { marginBottom: 20 },
-  title: { color: '#0F172A', fontSize: 24, fontWeight: '800' },
-  subtitle: { color: '#64748B', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  searchContainer: { marginBottom: 14 },
-  searchInput: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 14,
-    color: '#0F172A',
-    fontSize: 14,
-  },
-  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  filterChip: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  filterChipActive: { backgroundColor: '#EFF6FF', borderColor: '#2563EB' },
-  filterChipText: { color: '#64748B', fontSize: 12, fontWeight: '600' },
-  filterChipTextActive: { color: '#2563EB', fontWeight: '700' },
-  sectionHeaderTitle: { color: '#0F172A', fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  topicCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 14,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-  },
-  topicHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  topicHeaderLeft: { flexDirection: 'row', flex: 1, gap: 12, alignItems: 'flex-start', paddingRight: 8 },
-  classLevelBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  classLevelText: { color: '#2563EB', fontSize: 10, fontWeight: '700' },
-  topicTitle: { color: '#0F172A', fontSize: 16, fontWeight: '800' },
-  topicDesc: { color: '#64748B', fontSize: 12, marginTop: 2, lineHeight: 16 },
-  masteryCol: { alignItems: 'flex-end' },
-  masteryVal: { color: '#2563EB', fontSize: 18, fontWeight: '800' },
-  masteryLbl: { color: '#94A3B8', fontSize: 10 },
-  progressTrack: { height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, marginTop: 12, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
-  expandedContent: { marginTop: 16, borderTopWidth: 1, borderColor: '#F1F5F9', paddingTop: 14 },
-  lessonsSectionTitle: { color: '#0F172A', fontSize: 13, fontWeight: '700', marginBottom: 10 },
-  emptyLessonsText: { color: '#94A3B8', fontSize: 12, fontStyle: 'italic' },
-  lessonItemCard: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
-  lessonHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  lessonTitleText: { color: '#0F172A', fontSize: 14, fontWeight: '700', flex: 1 },
-  lessonToggleText: { color: '#2563EB', fontSize: 11, fontWeight: '700' },
-  lessonBodyArea: { marginTop: 10 },
-  lessonSummaryText: { color: '#64748B', fontSize: 12, marginBottom: 8 },
-  workedExampleCard: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 8 },
-  workedExampleTitle: { color: '#0F172A', fontSize: 13, fontWeight: '700', marginBottom: 4 },
-  problemStatementText: { color: '#0F172A', fontSize: 13, fontWeight: '600', marginBottom: 6 },
-  solutionStepsTitle: { color: '#64748B', fontSize: 11, fontWeight: '700', marginBottom: 4 },
-  stepText: { color: '#334155', fontSize: 12, lineHeight: 18, marginBottom: 2 },
-  shortcutBox: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0', borderWidth: 1, borderRadius: 8, padding: 10, marginTop: 8 },
-  shortcutTitle: { color: '#10B981', fontSize: 10, fontWeight: '700' },
-  shortcutBody: { color: '#065F46', fontSize: 12, marginTop: 2 },
-  topicPracticeBtn: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 12 },
-  topicPracticeBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 20, paddingBottom: 40 },
+    header: { marginBottom: 20 },
+    title: { color: colors.text, fontSize: 24, fontWeight: '800' },
+    subtitle: { color: colors.textMuted, fontSize: 13, marginTop: 4, lineHeight: 18 },
+    searchContainer: { marginBottom: 14 },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 10,
+      padding: 14,
+      color: colors.text,
+      fontSize: 14,
+    },
+    filterRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+    filterChip: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+    },
+    filterChipActive: { backgroundColor: colors.warningSurface, borderColor: colors.primary },
+    filterChipText: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+    filterChipTextActive: { color: colors.primary, fontWeight: '700' },
+    sectionHeaderTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 12 },
+    topicCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 18,
+      marginBottom: 14,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+    },
+    topicHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    topicHeaderLeft: { flexDirection: 'row', flex: 1, gap: 12, alignItems: 'flex-start', paddingRight: 8 },
+    classLevelBadge: { backgroundColor: colors.surfaceSecondary, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+    classLevelText: { color: colors.primary, fontSize: 10, fontWeight: '700' },
+    topicTitle: { color: colors.text, fontSize: 16, fontWeight: '800' },
+    topicDesc: { color: colors.textMuted, fontSize: 12, marginTop: 2, lineHeight: 16 },
+    masteryCol: { alignItems: 'flex-end' },
+    masteryVal: { color: colors.primary, fontSize: 18, fontWeight: '800' },
+    masteryLbl: { color: colors.textMuted, fontSize: 10 },
+    progressTrack: { height: 6, backgroundColor: colors.surfaceSecondary, borderRadius: 3, marginTop: 12, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 3 },
+    expandedContent: { marginTop: 16, borderTopWidth: 1, borderColor: colors.surfaceSecondary, paddingTop: 14 },
+    lessonsSectionTitle: { color: colors.text, fontSize: 13, fontWeight: '700', marginBottom: 10 },
+    emptyLessonsText: { color: colors.textMuted, fontSize: 12, fontStyle: 'italic' },
+    lessonItemCard: { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
+    lessonHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    lessonTitleText: { color: colors.text, fontSize: 14, fontWeight: '700', flex: 1 },
+    lessonToggleText: { color: colors.primary, fontSize: 11, fontWeight: '700' },
+    lessonBodyArea: { marginTop: 10 },
+    lessonSummaryText: { color: colors.textMuted, fontSize: 12, marginBottom: 8 },
+    workedExampleCard: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 8 },
+    workedExampleTitle: { color: colors.text, fontSize: 13, fontWeight: '700', marginBottom: 4 },
+    problemStatementText: { color: colors.text, fontSize: 13, fontWeight: '600', marginBottom: 6 },
+    solutionStepsTitle: { color: colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 },
+    stepText: { color: colors.text, fontSize: 12, lineHeight: 18, marginBottom: 2 },
+    shortcutBox: { backgroundColor: colors.successSurface, borderColor: colors.successBorder, borderWidth: 1, borderRadius: 8, padding: 10, marginTop: 8 },
+    shortcutTitle: { color: '#10B981', fontSize: 10, fontWeight: '700' },
+    shortcutBody: { color: colors.successText, fontSize: 12, marginTop: 2 },
+    topicPracticeBtn: { backgroundColor: '#F59E0B', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 12 },
+    topicPracticeBtnText: { color: '#090D16', fontSize: 14, fontWeight: '700' },
+  });
+}

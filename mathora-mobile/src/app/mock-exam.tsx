@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,14 +7,19 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/use-theme';
 import { MOCK_EXAMS_DATA, Question } from '@/services/dataService';
 import { useBlockScreenCapture } from '@/hooks/useBlockScreenCapture';
 import { reportScreenshotAttempt } from '@/services/screenSecurity';
 
 export default function MockExamScreen() {
   const router = useRouter();
+  const colors = useTheme();
+  const scheme = useColorScheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useBlockScreenCapture({ onScreenshotDetected: () => reportScreenshotAttempt('mock_exam') });
   const exam = MOCK_EXAMS_DATA[0];
 
@@ -73,7 +78,7 @@ export default function MockExamScreen() {
 
   const getWAECGrade = (pct: number) => {
     if (pct >= 75) return { grade: 'A1', label: 'EXCELLENT', color: '#10B981' };
-    if (pct >= 65) return { grade: 'B2', label: 'VERY GOOD', color: '#38BDF8' };
+    if (pct >= 65) return { grade: 'B2', label: 'VERY GOOD', color: '#06B6D4' };
     if (pct >= 50) return { grade: 'C4', label: 'CREDIT', color: '#F59E0B' };
     return { grade: 'F9', label: 'REMEDIAL NEEDED', color: '#EF4444' };
   };
@@ -82,7 +87,7 @@ export default function MockExamScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#090D16" />
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Text style={styles.backText}>← Back to Dashboard</Text>
@@ -269,67 +274,70 @@ export default function MockExamScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#090D16' },
-  scrollContent: { padding: 16 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#38BDF8', fontSize: 14, fontWeight: 'bold' },
-  startCard: {
-    backgroundColor: '#1E1B4B',
-    borderColor: '#4338CA',
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 20,
-  },
-  badgeText: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
-  subtitle: { color: '#94A3B8', fontSize: 13, marginTop: 4, lineHeight: 18 },
-  infoGrid: { flexDirection: 'row', gap: 10, marginVertical: 18 },
-  infoBox: { flex: 1, backgroundColor: '#0F172A', borderRadius: 12, padding: 12, alignItems: 'center' },
-  infoVal: { color: '#38BDF8', fontSize: 16, fontWeight: 'bold' },
-  infoValGold: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold' },
-  infoLbl: { color: '#64748B', fontSize: 11, marginTop: 2 },
-  startExamBtn: { backgroundColor: '#F59E0B', borderRadius: 12, padding: 16, alignItems: 'center' },
-  startExamBtnText: { color: '#090D16', fontSize: 16, fontWeight: 'bold' },
-  timerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  questionIndexText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  examTag: { color: '#38BDF8', fontSize: 10, fontWeight: 'bold' },
-  timerBadge: { backgroundColor: '#1E1B4B', borderColor: '#4338CA', borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
-  timerBadgeWarning: { backgroundColor: '#7F1D1D', borderColor: '#EF4444' },
-  timerText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
-  paletteRow: { flexDirection: 'row', gap: 6, marginBottom: 16, flexWrap: 'wrap' },
-  paletteChip: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center', borderColor: '#1E293B', borderWidth: 1 },
-  paletteAnswered: { backgroundColor: '#1E1B4B', borderColor: '#4338CA' },
-  paletteCurrent: { borderColor: '#F59E0B', borderWidth: 2 },
-  paletteText: { color: '#64748B', fontSize: 12, fontWeight: 'bold' },
-  paletteTextAnswered: { color: '#38BDF8' },
-  paletteTextCurrent: { color: '#F59E0B' },
-  questionCard: { backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 16 },
-  questionText: { color: '#FFFFFF', fontSize: 17, fontWeight: 'bold', lineHeight: 24 },
-  optionCard: { backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  optionSelected: { borderColor: '#F59E0B', backgroundColor: '#78350F33' },
-  optionLetter: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold', width: 28 },
-  optionLetterSelected: { color: '#F59E0B' },
-  optionText: { color: '#FFFFFF', fontSize: 15, fontWeight: '500' },
-  navBtnRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginTop: 14 },
-  prevBtn: { flex: 1, backgroundColor: '#1E293B', borderRadius: 12, padding: 14, alignItems: 'center' },
-  prevBtnText: { color: '#94A3B8', fontSize: 14, fontWeight: 'bold' },
-  nextBtn: { flex: 1, backgroundColor: '#38BDF8', borderRadius: 12, padding: 14, alignItems: 'center' },
-  nextBtnText: { color: '#090D16', fontSize: 14, fontWeight: 'bold' },
-  finishBtn: { flex: 1, backgroundColor: '#10B981', borderRadius: 12, padding: 14, alignItems: 'center' },
-  finishBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
-  resultCard: { backgroundColor: '#0F172A', borderColor: '#1E293B', borderWidth: 1, borderRadius: 20, padding: 20, alignItems: 'center' },
-  resultHeader: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  resultTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold', marginTop: 4, textAlign: 'center' },
-  gradeCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#1E1B4B', justifyContent: 'center', alignItems: 'center', marginVertical: 18, borderColor: '#4338CA', borderWidth: 2 },
-  gradeText: { fontSize: 32, fontWeight: 'bold' },
-  gradeLabel: { color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginTop: 2 },
-  scoreSummaryGrid: { flexDirection: 'row', gap: 12, width: '100%', marginBottom: 18 },
-  summaryBox: { flex: 1, backgroundColor: '#1E1B4B33', borderRadius: 12, padding: 14, alignItems: 'center' },
-  summaryVal: { color: '#F59E0B', fontSize: 20, fontWeight: 'bold' },
-  summaryLbl: { color: '#94A3B8', fontSize: 11, marginTop: 2 },
-  retryBtn: { backgroundColor: '#38BDF8', borderRadius: 12, padding: 14, width: '100%', alignItems: 'center', marginBottom: 10 },
-  retryBtnText: { color: '#090D16', fontSize: 15, fontWeight: 'bold' },
-  analysisBtn: { backgroundColor: '#1E1B4B', borderColor: '#4338CA', borderWidth: 1, borderRadius: 12, padding: 14, width: '100%', alignItems: 'center' },
-  analysisBtnText: { color: '#C7D2FE', fontSize: 14, fontWeight: 'bold' },
-});
+function createStyles(colors: ReturnType<typeof useTheme>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { padding: 16 },
+    backBtn: { marginBottom: 12 },
+    backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
+    startCard: {
+      // Fixed navy highlight card — see index.tsx's parentBanner note.
+      backgroundColor: '#1E1B4B',
+      borderColor: '#4338CA',
+      borderWidth: 1,
+      borderRadius: 20,
+      padding: 20,
+    },
+    badgeText: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+    subtitle: { color: '#C7D2FE', fontSize: 13, marginTop: 4, lineHeight: 18 },
+    infoGrid: { flexDirection: 'row', gap: 10, marginVertical: 18 },
+    infoBox: { flex: 1, backgroundColor: '#0F172A', borderRadius: 12, padding: 12, alignItems: 'center' },
+    infoVal: { color: '#06B6D4', fontSize: 16, fontWeight: 'bold' },
+    infoValGold: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold' },
+    infoLbl: { color: '#94A3B8', fontSize: 11, marginTop: 2 },
+    startExamBtn: { backgroundColor: '#F59E0B', borderRadius: 12, padding: 16, alignItems: 'center' },
+    startExamBtnText: { color: '#090D16', fontSize: 16, fontWeight: 'bold' },
+    timerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+    questionIndexText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+    examTag: { color: '#06B6D4', fontSize: 10, fontWeight: 'bold' },
+    timerBadge: { backgroundColor: '#1E1B4B', borderColor: '#4338CA', borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+    timerBadgeWarning: { backgroundColor: '#7F1D1D', borderColor: '#EF4444' },
+    timerText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+    paletteRow: { flexDirection: 'row', gap: 6, marginBottom: 16, flexWrap: 'wrap' },
+    paletteChip: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderColor: colors.border, borderWidth: 1 },
+    paletteAnswered: { backgroundColor: '#1E1B4B', borderColor: '#4338CA' },
+    paletteCurrent: { borderColor: '#F59E0B', borderWidth: 2 },
+    paletteText: { color: colors.textMuted, fontSize: 12, fontWeight: 'bold' },
+    paletteTextAnswered: { color: '#06B6D4' },
+    paletteTextCurrent: { color: '#F59E0B' },
+    questionCard: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 16 },
+    questionText: { color: colors.text, fontSize: 17, fontWeight: 'bold', lineHeight: 24 },
+    optionCard: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    optionSelected: { borderColor: '#F59E0B', backgroundColor: colors.warningSurface },
+    optionLetter: { color: '#F59E0B', fontSize: 16, fontWeight: 'bold', width: 28 },
+    optionLetterSelected: { color: '#F59E0B' },
+    optionText: { color: colors.text, fontSize: 15, fontWeight: '500' },
+    navBtnRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginTop: 14 },
+    prevBtn: { flex: 1, backgroundColor: colors.surfaceSecondary, borderRadius: 12, padding: 14, alignItems: 'center' },
+    prevBtnText: { color: colors.textMuted, fontSize: 14, fontWeight: 'bold' },
+    nextBtn: { flex: 1, backgroundColor: '#06B6D4', borderRadius: 12, padding: 14, alignItems: 'center' },
+    nextBtnText: { color: '#090D16', fontSize: 14, fontWeight: 'bold' },
+    finishBtn: { flex: 1, backgroundColor: '#10B981', borderRadius: 12, padding: 14, alignItems: 'center' },
+    finishBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+    resultCard: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 20, padding: 20, alignItems: 'center' },
+    resultHeader: { color: '#F59E0B', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    resultTitle: { color: colors.text, fontSize: 20, fontWeight: 'bold', marginTop: 4, textAlign: 'center' },
+    gradeCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#1E1B4B', justifyContent: 'center', alignItems: 'center', marginVertical: 18, borderColor: '#4338CA', borderWidth: 2 },
+    gradeText: { fontSize: 32, fontWeight: 'bold' },
+    gradeLabel: { color: '#94A3B8', fontSize: 9, fontWeight: 'bold', marginTop: 2 },
+    scoreSummaryGrid: { flexDirection: 'row', gap: 12, width: '100%', marginBottom: 18 },
+    summaryBox: { flex: 1, backgroundColor: colors.surfaceSecondary, borderRadius: 12, padding: 14, alignItems: 'center' },
+    summaryVal: { color: '#F59E0B', fontSize: 20, fontWeight: 'bold' },
+    summaryLbl: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+    retryBtn: { backgroundColor: '#06B6D4', borderRadius: 12, padding: 14, width: '100%', alignItems: 'center', marginBottom: 10 },
+    retryBtnText: { color: '#090D16', fontSize: 15, fontWeight: 'bold' },
+    analysisBtn: { backgroundColor: '#1E1B4B', borderColor: '#4338CA', borderWidth: 1, borderRadius: 12, padding: 14, width: '100%', alignItems: 'center' },
+    analysisBtnText: { color: '#C7D2FE', fontSize: 14, fontWeight: 'bold' },
+  });
+}

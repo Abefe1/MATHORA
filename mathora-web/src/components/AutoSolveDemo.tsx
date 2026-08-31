@@ -67,13 +67,13 @@ export default function AutoSolveDemo() {
   }, [inView]);
 
   return (
-    <div ref={containerRef} className="paper-card rounded-2xl p-6 border border-slate-800 shadow-xl text-left">
+    <div ref={containerRef} className="paper-card rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xl text-left">
       <div className="flex items-center gap-2 mb-5">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
         </span>
-        <span className="text-xs font-mono font-bold text-emerald-300 uppercase tracking-wider">
+        <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
           Watch Mathora Solve — Live
         </span>
       </div>
@@ -85,7 +85,7 @@ export default function AutoSolveDemo() {
             <div>
               <EquationReveal
                 content={s.latex}
-                className="text-base sm:text-lg font-bold text-white font-mono"
+                className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-mono"
                 duration={0.85}
               />
               <p className="text-[10px] font-mono text-slate-500 mt-0.5">{s.label}</p>

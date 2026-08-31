@@ -297,7 +297,7 @@ export default function AdminCMS() {
         {activeTab === 'review' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-3">
-              {loadingUploads && <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />}
+              {loadingUploads && <Loader2 className="w-5 h-5 text-slate-500 dark:text-slate-400 animate-spin" />}
               {!loadingUploads && pendingUploads.length === 0 && (
                 <p className="text-xs text-slate-500">No uploads yet.</p>
               )}
@@ -312,7 +312,7 @@ export default function AdminCMS() {
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <FileText className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
                     <span className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{upload.original_filename}</span>
                   </div>
                   <span
@@ -334,7 +334,7 @@ export default function AdminCMS() {
             <div className="lg:col-span-2 space-y-4">
               {!selectedUpload && <p className="text-xs text-slate-500">Select an upload to review its generated questions.</p>}
               {selectedUpload && draftQuestions.length === 0 && selectedUpload.generated_question_ids.length > 0 && (
-                <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                <Loader2 className="w-5 h-5 text-slate-500 dark:text-slate-400 animate-spin" />
               )}
               {selectedUpload && selectedUpload.generated_question_ids.length === 0 && (
                 <p className="text-xs text-slate-500">This upload hasn&apos;t generated any questions yet (still processing, or it failed).</p>
