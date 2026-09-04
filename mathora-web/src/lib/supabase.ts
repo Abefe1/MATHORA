@@ -100,7 +100,7 @@ type AttemptInput = {
   student_id: string; // auth.uid() of the signed-in student — resolved to students.id below
   question_id: string;
   topic_id: string;
-  selected_option: 'A' | 'B' | 'C' | 'D';
+  selected_option: 'A' | 'B' | 'C' | 'D' | 'E';
   is_correct: boolean;
   time_taken_seconds: number;
   rescue_mode_triggered: boolean;

@@ -11,7 +11,7 @@ export interface OfflineAttempt {
   student_id: string;
   question_id: string;
   topic_id: string;
-  selected_option: 'A' | 'B' | 'C' | 'D';
+  selected_option: 'A' | 'B' | 'C' | 'D' | 'E';
   is_correct: boolean;
   time_taken_seconds: number;
   rescue_mode_triggered: boolean;
