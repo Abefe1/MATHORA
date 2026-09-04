@@ -10,9 +10,13 @@ import {
   fetchClassRoster,
   fetchPendingJoinRequests,
   decideJoinRequest,
+  fetchClassScoreSummary,
   ClassRosterEntry,
   ClassJoinRequest,
+  ClassStudentScore,
 } from '@/services/supabaseService';
+import { downloadCsv } from '@/lib/csv';
+import { useToast } from '@/lib/toastContext';
 
 type ParsedRow = { full_name: string; verification_value?: string };
 
@@ -37,6 +41,7 @@ export default function RosterScreen() {
   const colors = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { classId, className } = useLocalSearchParams<{ classId: string; className?: string }>();
+  const showToast = useToast();
 
   const [roster, setRoster] = useState<ClassRosterEntry[]>([]);
   const [requests, setRequests] = useState<ClassJoinRequest[]>([]);
@@ -48,15 +53,23 @@ export default function RosterScreen() {
 
   const [filePreview, setFilePreview] = useState<ParsedRow[]>([]);
 
+  // Fetched alongside the roster purely so the "download with scores"
+  // export below has something to merge in — mirrors mathora-web's
+  // roster page. Not rendered anywhere else on this screen.
+  const [scores, setScores] = useState<ClassStudentScore[]>([]);
+  const [includeScores, setIncludeScores] = useState(false);
+
   const load = useCallback(async () => {
     if (!classId) return;
     setLoading(true);
-    const [rosterData, requestData] = await Promise.all([
+    const [rosterData, requestData, scoreSummary] = await Promise.all([
       fetchClassRoster(classId),
       fetchPendingJoinRequests(classId),
+      fetchClassScoreSummary(classId),
     ]);
     setRoster(rosterData);
     setRequests(requestData);
+    setScores(scoreSummary.students);
     setLoading(false);
   }, [classId]);
 
@@ -124,11 +137,37 @@ export default function RosterScreen() {
     load();
   };
 
+  const handleDownload = async () => {
+    const scoreByStudentId = new Map(scores.map((s) => [s.student_id, s]));
+    const rows = roster.map((entry) => {
+      const score = entry.claimed_by_student_id ? scoreByStudentId.get(entry.claimed_by_student_id) : undefined;
+      const base: Record<string, string | number> = {
+        'Full Name': entry.full_name,
+        Status: entry.claimed_by_student_id ? 'Claimed' : 'Unclaimed',
+      };
+      if (includeScores) {
+        base['Questions Attempted'] = score?.total_attempted ?? '';
+        base['Correct'] = score?.total_correct ?? '';
+        base['Mastery %'] = score?.average_mastery_percentage ?? '';
+      }
+      return base;
+    });
+    try {
+      await downloadCsv(`class-roster${includeScores ? '-with-scores' : ''}.csv`, rows);
+    } catch {
+      showToast('Could not export the roster. Please try again.', 'error');
+    }
+  };
+
   const handleDecide = async (requestId: string, approve: boolean) => {
     setBusy(true);
-    await decideJoinRequest(requestId, approve);
+    const ok = await decideJoinRequest(requestId, approve);
     setBusy(false);
     load();
+    showToast(
+      ok ? (approve ? 'Join request approved.' : 'Join request rejected.') : 'Failed to update join request.',
+      ok ? 'success' : 'error'
+    );
   };
 
   return (
@@ -203,7 +242,21 @@ export default function RosterScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Roster ({roster.length})</Text>
+          <View style={styles.rosterHeaderRow}>
+            <Text style={styles.cardTitle}>Roster ({roster.length})</Text>
+            <TouchableOpacity style={styles.downloadBtn} onPress={handleDownload} disabled={roster.length === 0}>
+              <Text style={styles.downloadBtnText}>Download List</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.checkboxRow}
+            onPress={() => setIncludeScores((prev) => !prev)}
+          >
+            <View style={[styles.checkbox, includeScores && styles.checkboxChecked]}>
+              {includeScores && <Text style={styles.checkboxMark}>✓</Text>}
+            </View>
+            <Text style={styles.mutedText}>Include scores</Text>
+          </TouchableOpacity>
           {loading && <Text style={styles.mutedText}>Loading...</Text>}
           {!loading && roster.length === 0 && <Text style={styles.mutedText}>No students added yet.</Text>}
           {roster.map((entry) => (
@@ -254,5 +307,15 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
     rosterStatus: { fontSize: 10, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
     claimed: { backgroundColor: colors.successSurface, color: colors.successText },
     unclaimed: { backgroundColor: colors.surfaceSecondary, color: colors.textMuted },
+    rosterHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+    downloadBtn: { borderColor: '#F59E0B', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    downloadBtnText: { color: '#F59E0B', fontSize: 11, fontWeight: 'bold' },
+    checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    checkbox: {
+      width: 16, height: 16, borderRadius: 4, borderWidth: 1, borderColor: colors.border,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    checkboxChecked: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' },
+    checkboxMark: { color: '#090D16', fontSize: 11, fontWeight: 'bold' },
   });
 }
