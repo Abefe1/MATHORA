@@ -46,7 +46,12 @@ export async function proxy(request: NextRequest) {
   if (match && role) {
     const isAdmin = match.prefix === '/admin' && role.endsWith('_admin');
     if (!isAdmin && role !== match.role) {
-      return NextResponse.redirect(new URL(`/${role === 'student' ? 'student' : role}`, request.url));
+      // role is one of 'student' | 'teacher' | 'parent' | a '*_admin'
+      // role — the last of which has no route of its own named after
+      // it, only '/admin'. Map it there instead of building a
+      // '/content_admin'-style URL that 404s.
+      const home = role.endsWith('_admin') ? 'admin' : role;
+      return NextResponse.redirect(new URL(`/${home}`, request.url));
     }
   }
 

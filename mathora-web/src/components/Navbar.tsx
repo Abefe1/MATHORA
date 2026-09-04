@@ -28,7 +28,17 @@ interface NavbarProps {
 export default function Navbar({ currentRole = 'student', userName = 'Chidiebere Okafor' }: NavbarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
+  // proxy.ts bounces a signed-in user out of any '/<prefix>' route that
+  // doesn't match their real app_metadata role (any '*_admin' role is
+  // the one exception, scoped to '/admin'). Only list portals this
+  // user can actually land on — otherwise "switching" just bounces
+  // them straight back. Signed-out visitors (role === null, e.g. the
+  // public landing page's bare <Navbar />) still see every entry —
+  // proxy.ts sends them to /login?next=... instead, which is the
+  // intended discovery path, not a dead link.
+  const canReach = (portal: 'student' | 'teacher' | 'parent' | 'admin') =>
+    !role || (portal === 'admin' ? role.endsWith('_admin') : role === portal);
   const { pendingCount, syncing } = useOfflineFlush();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
@@ -163,37 +173,45 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
               <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50">
                 <span className="px-3 py-1 text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-slate-400 block">Switch Portal View</span>
 
-                <Link
-                  href="/student"
-                  onClick={() => setShowRoleDropdown(false)}
-                  className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
-                >
-                  Student Notebook {currentRole === 'student' && <Check className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />}
-                </Link>
+                {canReach('student') && (
+                  <Link
+                    href="/student"
+                    onClick={() => setShowRoleDropdown(false)}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
+                  >
+                    Student Notebook {currentRole === 'student' && <Check className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />}
+                  </Link>
+                )}
 
-                <Link
-                  href="/teacher"
-                  onClick={() => setShowRoleDropdown(false)}
-                  className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
-                >
-                  Teacher Ledger {currentRole === 'teacher' && <Check className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />}
-                </Link>
+                {canReach('teacher') && (
+                  <Link
+                    href="/teacher"
+                    onClick={() => setShowRoleDropdown(false)}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
+                  >
+                    Teacher Ledger {currentRole === 'teacher' && <Check className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />}
+                  </Link>
+                )}
 
-                <Link
-                  href="/parent"
-                  onClick={() => setShowRoleDropdown(false)}
-                  className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
-                >
-                  Parent Report {currentRole === 'parent' && <Check className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />}
-                </Link>
+                {canReach('parent') && (
+                  <Link
+                    href="/parent"
+                    onClick={() => setShowRoleDropdown(false)}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
+                  >
+                    Parent Report {currentRole === 'parent' && <Check className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />}
+                  </Link>
+                )}
 
-                <Link
-                  href="/admin"
-                  onClick={() => setShowRoleDropdown(false)}
-                  className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
-                >
-                  Admin CMS {currentRole === 'super_admin' && <Check className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />}
-                </Link>
+                {canReach('admin') && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setShowRoleDropdown(false)}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200"
+                  >
+                    Admin CMS {currentRole === 'super_admin' && <Check className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />}
+                  </Link>
+                )}
 
                 {user && (
                   <>

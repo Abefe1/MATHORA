@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import { INITIAL_TOPICS } from '@/lib/mockData';
 import { createClient } from '@/lib/supabase/client';
+import type { Topic, ExamType } from '@/lib/types';
 import { ShieldCheck, Plus, BookOpen, Layers, CheckCircle2, AlertCircle, BarChart, Database, Upload, FileText, Loader2, Check, X } from 'lucide-react';
 
 type ContentUpload = {
@@ -34,11 +35,24 @@ type DraftQuestion = {
 };
 
 export default function AdminCMS() {
-  const [topics, setTopics] = useState(INITIAL_TOPICS);
+  // Seeded from mock data so the page renders something immediately;
+  // replaced by loadAuthoredContent() below with the real topics/
+  // questions.select('*') result the moment Supabase answers (or left
+  // as-is if Supabase isn't configured — see createClient()).
+  const [topics, setTopics] = useState<Topic[]>(INITIAL_TOPICS);
+  const [topicsLoading, setTopicsLoading] = useState(true);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
   const [newExplanation, setNewExplanation] = useState('');
   const [newShortcut, setNewShortcut] = useState('');
+  const [newTopicId, setNewTopicId] = useState('');
+  const [newOptionA, setNewOptionA] = useState('');
+  const [newOptionB, setNewOptionB] = useState('');
+  const [newOptionC, setNewOptionC] = useState('');
+  const [newOptionD, setNewOptionD] = useState('');
+  const [newCorrectLetter, setNewCorrectLetter] = useState<'A' | 'B' | 'C' | 'D'>('A');
+  const [savingQuestion, setSavingQuestion] = useState(false);
+  const [saveQuestionError, setSaveQuestionError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'authored' | 'upload' | 'review'>('authored');
 
@@ -48,6 +62,70 @@ export default function AdminCMS() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Real topics + their published questions, replacing the INITIAL_TOPICS
+  // placeholder this page shipped with. questions.select('*') here (not
+  // fetchQuestions() from lib/supabase.ts, which runs on a separate,
+  // unauthenticated client) so RLS sees this admin's session and — for
+  // an admin role — the questions_read_published_or_own_draft policy's
+  // "or you're an admin" clause would apply too; explicitly filtering
+  // to 'published' keeps this tab showing only what students actually
+  // see, matching its hardcoded "Published" badge.
+  const loadAuthoredContent = useCallback(async () => {
+    const supabase = createClient();
+    if (!supabase) {
+      setTopicsLoading(false);
+      return;
+    }
+    setTopicsLoading(true);
+    const [{ data: topicRows }, { data: questionRows }] = await Promise.all([
+      supabase.from('topics').select('id, title, class_level, description, order_index, icon').order('order_index'),
+      supabase
+        .from('questions')
+        .select('id, topic_id, question_text, explanation, exam_type, exam_shortcut, difficulty')
+        .eq('status', 'published'),
+    ]);
+    setTopicsLoading(false);
+    if (!topicRows) return;
+
+    const questionsByTopic = new Map<string, Topic['questions']>();
+    for (const q of questionRows ?? []) {
+      const list = questionsByTopic.get(q.topic_id) ?? [];
+      list.push({
+        id: q.id,
+        topic_id: q.topic_id,
+        question_text: q.question_text,
+        difficulty: q.difficulty ?? 2,
+        exam_type: (q.exam_type ?? 'GENERAL') as ExamType,
+        explanation: q.explanation ?? '',
+        exam_shortcut: q.exam_shortcut ?? undefined,
+        options: [],
+      });
+      questionsByTopic.set(q.topic_id, list);
+    }
+
+    const merged: Topic[] = topicRows.map((t) => ({
+      id: t.id,
+      title: t.title,
+      class_level: t.class_level,
+      description: t.description ?? '',
+      order_index: t.order_index ?? 1,
+      icon: t.icon ?? 'Calculator',
+      lessons: [],
+      questions: questionsByTopic.get(t.id) ?? [],
+    }));
+
+    setTopics(merged);
+    setUploadTopicId((prev) => (merged.some((t) => t.id === prev) ? prev : (merged[0]?.id ?? '')));
+    setNewTopicId((prev) => (merged.some((t) => t.id === prev) ? prev : (merged[0]?.id ?? '')));
+  }, []);
+
+  useEffect(() => {
+    // Load-on-mount effect — same justified suppression as the
+    // Pending Review tab's load-on-visible effect below.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAuthoredContent();
+  }, [loadAuthoredContent]);
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,37 +204,80 @@ export default function AdminCMS() {
     if (!supabase) return;
     await supabase.from('questions').update({ status: decision }).eq('id', id);
     setDraftQuestions((prev) => prev.filter((q) => q.id !== id));
+    // A newly-published question should show up under Authored Content
+    // without waiting for the next tab switch/reload.
+    if (decision === 'published') loadAuthoredContent();
   };
 
-  const handleAddQuestion = (e: React.FormEvent) => {
+  const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newQuestionText.trim()) return;
+    if (!newQuestionText.trim() || !newTopicId) return;
 
-    const newQ = {
-      id: `q-custom-${Date.now()}`,
-      topic_id: 't-quadratics',
-      question_text: newQuestionText,
-      difficulty: 2,
-      exam_type: 'WAEC' as const,
-      explanation: newExplanation,
-      exam_shortcut: newShortcut,
-      options: [
-        { letter: 'A' as const, text: '$x = 1$', is_correct: true },
-        { letter: 'B' as const, text: '$x = 2$', is_correct: false },
-        { letter: 'C' as const, text: '$x = 3$', is_correct: false },
-        { letter: 'D' as const, text: '$x = 4$', is_correct: false }
-      ]
-    };
+    const supabase = createClient();
+    if (!supabase) {
+      setSaveQuestionError('Not connected to Supabase.');
+      return;
+    }
 
-    setTopics((prev) => {
-      const updated = [...prev];
-      updated[0].questions.push(newQ);
-      return updated;
-    });
+    setSavingQuestion(true);
+    setSaveQuestionError(null);
+
+    const { data, error } = await supabase
+      .from('questions')
+      .insert({
+        topic_id: newTopicId,
+        question_text: newQuestionText,
+        option_a: newOptionA,
+        option_b: newOptionB,
+        option_c: newOptionC,
+        option_d: newOptionD,
+        correct_letter: newCorrectLetter,
+        explanation: newExplanation,
+        exam_shortcut: newShortcut || null,
+        exam_type: 'WAEC',
+        status: 'published',
+      })
+      .select('id, topic_id, question_text, explanation, exam_type, exam_shortcut, difficulty')
+      .single();
+
+    setSavingQuestion(false);
+
+    if (error || !data) {
+      setSaveQuestionError(error?.message ?? 'Failed to save question.');
+      return;
+    }
+
+    setTopics((prev) =>
+      prev.map((t) =>
+        t.id === data.topic_id
+          ? {
+              ...t,
+              questions: [
+                ...t.questions,
+                {
+                  id: data.id,
+                  topic_id: data.topic_id,
+                  question_text: data.question_text,
+                  difficulty: data.difficulty ?? 2,
+                  exam_type: (data.exam_type ?? 'WAEC') as ExamType,
+                  explanation: data.explanation ?? '',
+                  exam_shortcut: data.exam_shortcut ?? undefined,
+                  options: [],
+                },
+              ],
+            }
+          : t
+      )
+    );
 
     setNewQuestionText('');
     setNewExplanation('');
     setNewShortcut('');
+    setNewOptionA('');
+    setNewOptionB('');
+    setNewOptionC('');
+    setNewOptionD('');
+    setNewCorrectLetter('A');
     setShowQuestionModal(false);
   };
 
@@ -388,6 +509,10 @@ export default function AdminCMS() {
         {/* Content Management Cards */}
         {activeTab === 'authored' && (
         <div className="space-y-6">
+          {topicsLoading && <Loader2 className="w-5 h-5 text-slate-500 dark:text-slate-400 animate-spin" />}
+          {!topicsLoading && topics.length === 0 && (
+            <p className="text-xs text-slate-500">No topics yet — add one in Supabase&apos;s `topics` table first.</p>
+          )}
           {topics.map((topic) => (
             <div key={topic.id} className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -440,7 +565,22 @@ export default function AdminCMS() {
             <form onSubmit={handleAddQuestion} className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Author New WAEC Question</h3>
 
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Topic</label>
+                  <select
+                    value={newTopicId}
+                    onChange={(e) => setNewTopicId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                    required
+                  >
+                    <option value="" disabled>Select a topic…</option>
+                    {topics.map((t) => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
                     Question Text (Markdown + LaTeX: $...$)
@@ -453,6 +593,41 @@ export default function AdminCMS() {
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Options — pick the correct one</label>
+                  <div className="space-y-2">
+                    {([
+                      ['A', newOptionA, setNewOptionA],
+                      ['B', newOptionB, setNewOptionB],
+                      ['C', newOptionC, setNewOptionC],
+                      ['D', newOptionD, setNewOptionD],
+                    ] as const).map(([letter, value, setValue]) => (
+                      <div key={letter} className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setNewCorrectLetter(letter)}
+                          title={`Mark ${letter} as the correct option`}
+                          className={`flex-shrink-0 w-7 h-7 rounded-lg text-xs font-bold border-2 flex items-center justify-center transition-colors ${
+                            newCorrectLetter === letter
+                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                              : 'border-slate-300 dark:border-slate-700 text-slate-500'
+                          }`}
+                        >
+                          {letter}
+                        </button>
+                        <input
+                          type="text"
+                          placeholder={`Option ${letter}`}
+                          value={value}
+                          onChange={(e) => setValue(e.target.value)}
+                          className="flex-1 px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          required
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -481,6 +656,13 @@ export default function AdminCMS() {
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
+
+                {saveQuestionError && (
+                  <div className="flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>{saveQuestionError}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-6">
@@ -493,8 +675,10 @@ export default function AdminCMS() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 shadow-md"
+                  disabled={savingQuestion || !newTopicId}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 disabled:opacity-50 shadow-md flex items-center gap-2"
                 >
+                  {savingQuestion && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Save to Question Bank
                 </button>
               </div>
