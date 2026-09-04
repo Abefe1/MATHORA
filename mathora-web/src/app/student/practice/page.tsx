@@ -5,12 +5,13 @@ import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import RescueModeModal from '@/components/RescueModeModal';
 import NoCopyGuard from '@/components/NoCopyGuard';
-import { Question, QuestionOption, Topic, ClassLevel } from '@/lib/types';
-import { Sparkles, CheckCircle2, XCircle, ArrowRight, RotateCcw, Lightbulb, Award } from 'lucide-react';
+import { Question, QuestionOption, Topic, ClassLevel, Activity } from '@/lib/types';
+import { Sparkles, CheckCircle2, XCircle, ArrowRight, RotateCcw, Lightbulb, Award, Gamepad2 } from 'lucide-react';
 import Link from 'next/link';
 
-import { fetchTopics, fetchQuestions, submitQuestionAttempt } from '@/lib/supabase';
+import { fetchTopics, fetchQuestions, fetchActivities, submitQuestionAttempt, submitActivityAttempt } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
+import ActivityPlayer from '@/components/ActivityPlayer';
 
 // See student/learn/page.tsx for the same term-grouping convention and the
 // same TODO on making the level dynamic off the student's own profile.
@@ -34,6 +35,13 @@ export default function PracticePage() {
   const [showRescueModal, setShowRescueModal] = useState(false);
   const [score, setScore] = useState(0);
 
+  // 'questions' is the original MCQ mode; 'activities' is the new
+  // Educaplay-style ordering/matching mode (mathora_schema_activities_patch.sql).
+  // Only shown as a tab when the current topic actually has any.
+  const [practiceMode, setPracticeMode] = useState<'questions' | 'activities'>('questions');
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activityIndex, setActivityIndex] = useState(0);
+
   useEffect(() => {
     fetchTopics().then((data) => {
       const levelTopics = data
@@ -52,7 +60,26 @@ export default function PracticePage() {
   useEffect(() => {
     if (!currentTopic) return;
     fetchQuestions(currentTopic.id).then(setQuestions);
+    fetchActivities(currentTopic.id).then((data) => {
+      setActivities(data);
+      setActivityIndex(0);
+      setPracticeMode((prev) => (data.length === 0 ? 'questions' : prev));
+    });
   }, [currentTopic]);
+
+  const currentActivity: Activity | undefined = activities[activityIndex];
+
+  const handleActivityComplete = ({ score: activityScore, time_taken_seconds }: { score: number; time_taken_seconds: number }) => {
+    if (user && currentActivity) {
+      submitActivityAttempt({
+        studentAuthUserId: user.id,
+        activity_id: currentActivity.id,
+        score: activityScore,
+        time_taken_seconds,
+      });
+    }
+    setActivityIndex((prev) => prev + 1);
+  };
 
   const termGroups = useMemo(() => {
     const groups = new Map<number, Topic[]>();
@@ -163,7 +190,49 @@ export default function PracticePage() {
           ))}
         </div>
 
-        {loading ? (
+        {/* Practice mode toggle — only shown once a topic actually has
+            interactive activities to switch to. */}
+        {activities.length > 0 && (
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setPracticeMode('questions')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                practiceMode === 'questions'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-indigo-600 border border-slate-200 dark:border-slate-800'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Questions
+            </button>
+            <button
+              onClick={() => setPracticeMode('activities')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                practiceMode === 'activities'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-indigo-600 border border-slate-200 dark:border-slate-800'
+              }`}
+            >
+              <Gamepad2 className="w-3.5 h-3.5" /> Activities
+            </button>
+          </div>
+        )}
+
+        {practiceMode === 'activities' ? (
+          currentActivity ? (
+            <>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+                Activity {activityIndex + 1} of {activities.length}
+              </div>
+              <ActivityPlayer key={currentActivity.id} activity={currentActivity} onComplete={handleActivityComplete} />
+            </>
+          ) : (
+            <div className="glass-card rounded-2xl p-6 text-center border border-slate-200 dark:border-slate-800">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {activities.length === 0 ? 'No activities for this week yet.' : "You've completed every activity for this week!"}
+              </p>
+            </div>
+          )
+        ) : loading ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">Loading practice questions...</p>
         ) : questions.length === 0 ? (
           <div className="glass-card rounded-2xl p-6 text-center border border-slate-200 dark:border-slate-800">

@@ -1,14 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
 import { INITIAL_TOPICS, INITIAL_MASTERY } from '@/lib/mockData';
 import { Sparkles, ArrowRight, Play, AlertTriangle, BarChart2 } from 'lucide-react';
+import { fetchMyAssignments, type StudentAssignmentRow } from '@/lib/supabase';
 
 export default function StudentDashboard() {
+  const [pendingAssignments, setPendingAssignments] = useState<StudentAssignmentRow[]>([]);
+
+  useEffect(() => {
+    fetchMyAssignments().then((rows) => {
+      setPendingAssignments(rows.filter((a) => a.status === 'not_started' || a.status === 'in_progress').slice(0, 3));
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
       <Navbar currentRole="student" userName="Chidiebere Okafor" />
@@ -118,23 +127,36 @@ export default function StudentDashboard() {
                 <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Pending Teacher Assignments
               </h3>
 
-              <div className="space-y-3">
-                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Quadratic Practice Set #1
-                    </span>
-                    <Badge variant="struggling">Due Tomorrow</Badge>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Class: SS2 Science A (Mr. Bello)</p>
-                  <Link
-                    href="/student/practice"
-                    className="mt-2.5 inline-flex items-center gap-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
-                  >
-                    Start Assignment <ArrowRight className="w-3 h-3" />
-                  </Link>
+              {pendingAssignments.length === 0 ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400">Nothing pending — you&apos;re all caught up.</p>
+              ) : (
+                <div className="space-y-3">
+                  {pendingAssignments.map((a) => (
+                    <div key={a.id} className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{a.title}</span>
+                        <Badge variant={a.status === 'in_progress' ? 'mastered' : 'struggling'}>
+                          {a.status === 'in_progress' ? 'In Progress' : `Due ${new Date(a.due_date).toLocaleDateString()}`}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">{a.class_name}</p>
+                      <Link
+                        href={`/student/assignments/${a.id}/take`}
+                        className="mt-2.5 inline-flex items-center gap-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                      >
+                        {a.status === 'in_progress' ? 'Continue Assignment' : 'Start Assignment'} <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
+
+              <Link
+                href="/student/assignments"
+                className="mt-4 flex items-center justify-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
+              >
+                View All Assignments <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </Card>
 
             {/* Learning Stats */}

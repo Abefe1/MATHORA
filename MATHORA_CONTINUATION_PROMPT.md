@@ -66,7 +66,13 @@ actual Next.js app renders, not a standalone demo page.
 → `mathora_schema_five_option_patch.sql` (adds a nullable `option_e` +
 extends `correct_letter`/`selected_option` checks to A-E, since a real share
 of curated WAEC questions are genuinely 5-option and should NOT be trimmed
-to 4) → `mathora_seed_topics_ss1_ss2_ss3.sql` (topics for ALL of SS1-SS3
+to 4) → `mathora_schema_subjects_and_primary_levels_patch.sql` (multi-subject
+and primary-level scaffolding for the eventual expansion beyond
+Mathematics/JSS-SSS — adds a `subjects` table + `curricula.subject_id`
+FK backfilled from the existing `subject` text column, and extends the
+`class_level` enum with `PRI1`-`PRI6`; purely additive, no app code or
+existing-query changes required, safe to run any time) →
+`mathora_seed_topics_ss1_ss2_ss3.sql` (topics for ALL of SS1-SS3
 Mathematics AND Further Mathematics already exist here, do not re-create
 topic rows, only reference them by subquery) → `mathora_seed_exemplar_lessons.sql`
 (6 hand-verified topics, a style reference, don't duplicate its lesson rows).

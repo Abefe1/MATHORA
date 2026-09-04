@@ -6,10 +6,11 @@ import { useParams } from 'next/navigation';
 import Papa from 'papaparse';
 import Navbar from '@/components/Navbar';
 import { Card, Badge, Button } from '@/components/ui/Primitives';
-import { ArrowLeft, UserPlus, Upload, Users, Inbox, Check, X } from 'lucide-react';
+import { ArrowLeft, UserPlus, Upload, Users, Inbox, Check, X, Download } from 'lucide-react';
 
-import { bulkAddRosterEntries, fetchClassRoster, fetchPendingJoinRequests, decideJoinRequest } from '@/lib/supabase';
+import { bulkAddRosterEntries, fetchClassRoster, fetchPendingJoinRequests, decideJoinRequest, fetchClassScoreSummary, type ClassStudentScore } from '@/lib/supabase';
 import type { ClassRosterEntry, ClassJoinRequest } from '@/lib/types';
+import { downloadCsv } from '@/lib/csv';
 
 type ParsedRow = { full_name: string; verification_value?: string };
 
@@ -47,15 +48,24 @@ export default function ClassRosterPage() {
   const [filePreview, setFilePreview] = useState<ParsedRow[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
 
+  // Fetched alongside the roster (cheap, same class) purely so the
+  // "download with scores" export below has something to merge in —
+  // not rendered anywhere on this page otherwise; see the scores page
+  // for the actual score dashboard.
+  const [scores, setScores] = useState<ClassStudentScore[]>([]);
+  const [includeScores, setIncludeScores] = useState(false);
+
   const load = useCallback(async () => {
     if (!classId) return;
     setLoading(true);
-    const [rosterData, requestData] = await Promise.all([
+    const [rosterData, requestData, scoreSummary] = await Promise.all([
       fetchClassRoster(classId),
       fetchPendingJoinRequests(classId),
+      fetchClassScoreSummary(classId),
     ]);
     setRoster(rosterData);
     setRequests(requestData);
+    setScores(scoreSummary.students);
     setLoading(false);
   }, [classId]);
 
@@ -121,6 +131,24 @@ export default function ClassRosterPage() {
     setFilePreview([]);
     setBusy(false);
     load();
+  };
+
+  const handleDownload = () => {
+    const scoreByStudentId = new Map(scores.map((s) => [s.student_id, s]));
+    const rows = roster.map((entry) => {
+      const score = entry.claimed_by_student_id ? scoreByStudentId.get(entry.claimed_by_student_id) : undefined;
+      const base: Record<string, string | number> = {
+        'Full Name': entry.full_name,
+        Status: entry.claimed_by_student_id ? 'Claimed' : 'Unclaimed',
+      };
+      if (includeScores) {
+        base['Questions Attempted'] = score?.total_attempted ?? '';
+        base['Correct'] = score?.total_correct ?? '';
+        base['Mastery %'] = score?.average_mastery_percentage ?? '';
+      }
+      return base;
+    });
+    downloadCsv(`class-roster${includeScores ? '-with-scores' : ''}.csv`, rows);
   };
 
   const handleDecide = async (requestId: string, approve: boolean) => {
@@ -249,9 +277,25 @@ export default function ClassRosterPage() {
 
         {/* Current roster */}
         <Card variant="paper" className="p-6">
-          <h2 className="text-sm font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Roster ({roster.length})
-          </h2>
+          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <h2 className="text-sm font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Roster ({roster.length})
+            </h2>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={includeScores}
+                  onChange={(e) => setIncludeScores(e.target.checked)}
+                  className="accent-amber-500"
+                />
+                Include scores
+              </label>
+              <Button variant="outline" size="sm" onClick={handleDownload} disabled={roster.length === 0}>
+                <Download className="w-3.5 h-3.5" /> Download List
+              </Button>
+            </div>
+          </div>
           {loading && <p className="text-xs text-slate-500 dark:text-slate-400">Loading...</p>}
           {!loading && roster.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">No students added yet.</p>}
           <div className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">

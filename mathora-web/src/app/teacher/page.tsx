@@ -4,15 +4,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
-import { GraduationCap, Plus, Users, BarChart2, School as SchoolIcon } from 'lucide-react';
+import { GraduationCap, Plus, Users, BarChart2, School as SchoolIcon, BookOpen, Gamepad2 } from 'lucide-react';
+import ActivityBuilder from '@/components/ActivityBuilder';
 
 import {
   createTeacherClassInSupabase,
   fetchMyTeacherSchoolId,
   fetchMyClassesWithStats,
   fetchClassScoreSummary,
+  fetchClassTopics,
   type TeacherClassSummary,
   type ClassStudentScore,
+  type ClassLessonRow,
 } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import type { ClassLevel } from '@/lib/types';
@@ -27,30 +30,23 @@ export default function TeacherDashboard() {
   const [classList, setClassList] = useState<TeacherClassSummary[]>([]);
   const [classListLoading, setClassListLoading] = useState(true);
 
-  // Flattened per-student rows across every one of this teacher's
-  // classes, for the ledger table below — real totals from
-  // fetchClassScoreSummary rather than the two hardcoded per-topic
-  // columns this table used to show (Quadratic Equations/Trigonometry
-  // scores for three fixed names), which no query here actually
-  // produces cheaply per-topic per-student.
-  const [ledgerRows, setLedgerRows] = useState<(ClassStudentScore & { class_name: string })[]>([]);
+  // Ledger + lessons are scoped to one selected class (+ optional term)
+  // rather than flattened across every class — a class selector and term
+  // selector drive both below.
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<1 | 2 | 3 | 'all'>('all');
+  const [ledgerRows, setLedgerRows] = useState<ClassStudentScore[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(true);
+  const [lessons, setLessons] = useState<ClassLessonRow[]>([]);
+  const [lessonsLoading, setLessonsLoading] = useState(true);
+  const [activityBuilderTopic, setActivityBuilderTopic] = useState<ClassLessonRow | null>(null);
 
   const loadClasses = useCallback(async () => {
     setClassListLoading(true);
     const classes = await fetchMyClassesWithStats();
     setClassList(classes);
     setClassListLoading(false);
-
-    setLedgerLoading(true);
-    const perClass = await Promise.all(
-      classes.map(async (c) => {
-        const summary = await fetchClassScoreSummary(c.id);
-        return summary.students.map((s) => ({ ...s, class_name: c.name }));
-      })
-    );
-    setLedgerRows(perClass.flat());
-    setLedgerLoading(false);
+    setSelectedClassId((prev) => (prev && classes.some((c) => c.id === prev) ? prev : (classes[0]?.id ?? null)));
   }, []);
 
   useEffect(() => {
@@ -59,6 +55,44 @@ export default function TeacherDashboard() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadClasses();
   }, [loadClasses]);
+
+  const selectedClass = classList.find((c) => c.id === selectedClassId) ?? null;
+
+  useEffect(() => {
+    if (!selectedClass) {
+      // No class selected (e.g. teacher has none yet) — same justified
+      // suppression as loadClasses above.
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setLedgerRows([]);
+      setLessons([]);
+      setLedgerLoading(false);
+      setLessonsLoading(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      return;
+    }
+    const term = selectedTerm === 'all' ? undefined : selectedTerm;
+
+    let cancelled = false;
+    setLedgerLoading(true);
+    fetchClassScoreSummary(selectedClass.id, term).then((summary) => {
+      if (!cancelled) {
+        setLedgerRows(summary.students);
+        setLedgerLoading(false);
+      }
+    });
+
+    setLessonsLoading(true);
+    fetchClassTopics(selectedClass.class_level, term).then((rows) => {
+      if (!cancelled) {
+        setLessons(rows);
+        setLessonsLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedClass, selectedTerm]);
 
   // null = not checked yet, '' = checked and no school joined, else a
   // real school_id — only show the "join a school" prompt once we
@@ -154,20 +188,94 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <Link
-                href={`/teacher/class/${cls.id}/roster`}
-                className="mt-4 inline-flex items-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
-              >
-                Manage Roster &amp; Join Requests
-              </Link>
+              <div className="mt-4 flex items-center gap-4">
+                <Link
+                  href={`/teacher/class/${cls.id}/roster`}
+                  className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                >
+                  Manage Roster &amp; Join Requests
+                </Link>
+                <Link
+                  href={`/teacher/class/${cls.id}/assignments`}
+                  className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  Assignments
+                </Link>
+              </div>
             </Card>
           ))}
         </div>
+
+        {/* Class + term filter */}
+        {classList.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <select
+              value={selectedClassId ?? ''}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm font-mono text-slate-900 dark:text-white"
+            >
+              {classList.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <select
+              value={selectedTerm}
+              onChange={(e) => setSelectedTerm(e.target.value === 'all' ? 'all' : (Number(e.target.value) as 1 | 2 | 3))}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm font-mono text-slate-900 dark:text-white"
+            >
+              <option value="all">All Terms</option>
+              <option value={1}>Term 1</option>
+              <option value={2}>Term 2</option>
+              <option value={3}>Term 3</option>
+            </select>
+          </div>
+        )}
+
+        {/* Lessons this term */}
+        <Card variant="paper" className="mb-8">
+          <h2 className="text-lg font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            Lessons{selectedTerm !== 'all' ? ` — Term ${selectedTerm}` : ''}
+            {selectedClass ? ` (${selectedClass.name})` : ''}
+          </h2>
+          {lessonsLoading && <p className="text-xs text-slate-500 dark:text-slate-400">Loading…</p>}
+          {!lessonsLoading && lessons.length === 0 && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">No lessons match this class/term.</p>
+          )}
+          {!lessonsLoading && lessons.length > 0 && (
+            <ul className="divide-y divide-slate-200 dark:divide-slate-800 text-sm font-mono">
+              {lessons.map((l, idx) => (
+                <li key={l.topic_id} className="py-2.5 flex items-center gap-3 text-slate-800 dark:text-slate-200">
+                  <span className="text-xs text-slate-400 dark:text-slate-500 w-6">{idx + 1}.</span>
+                  <span className="flex-1">{l.title}</span>
+                  {l.term != null && (
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+                      Term {l.term}
+                    </span>
+                  )}
+                  {l.week != null && (
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400">
+                      Week {l.week}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setActivityBuilderTopic(l)}
+                    title="Add an interactive activity for this topic"
+                    className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:bg-indigo-100 dark:hover:bg-indigo-900"
+                  >
+                    <Gamepad2 className="w-3 h-3" /> Activity
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
         {/* Class Performance Ledger Table */}
         <Card variant="paper">
           <h2 className="text-lg font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Student Performance Ledger
+            {selectedClass ? ` — ${selectedClass.name}` : ''}
           </h2>
 
           <div className="overflow-x-auto">
@@ -175,7 +283,6 @@ export default function TeacherDashboard() {
               <thead className="bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-xs uppercase border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="px-4 py-3 rounded-l-lg">Student Name</th>
-                  <th className="px-4 py-3">Class</th>
                   <th className="px-4 py-3">Questions Attempted</th>
                   <th className="px-4 py-3">Correct</th>
                   <th className="px-4 py-3 rounded-r-lg">Avg Mastery</th>
@@ -184,12 +291,12 @@ export default function TeacherDashboard() {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                 {ledgerLoading && (
                   <tr>
-                    <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400" colSpan={5}>Loading…</td>
+                    <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400" colSpan={4}>Loading…</td>
                   </tr>
                 )}
                 {!ledgerLoading && ledgerRows.length === 0 && (
                   <tr>
-                    <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400" colSpan={5}>
+                    <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400" colSpan={4}>
                       No student activity yet.
                     </td>
                   </tr>
@@ -197,7 +304,6 @@ export default function TeacherDashboard() {
                 {ledgerRows.map((row) => (
                   <tr key={row.student_id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
                     <td className="px-4 py-3.5 font-bold font-sans">{row.full_name}</td>
-                    <td className="px-4 py-3 text-xs">{row.class_name}</td>
                     <td className="px-4 py-3">{row.total_attempted}</td>
                     <td className="px-4 py-3">{row.total_correct}</td>
                     <td
@@ -260,6 +366,17 @@ export default function TeacherDashboard() {
               </div>
             </form>
           </div>
+        )}
+
+        {/* Modal: Create Activity — scoped to whichever lesson row's
+            "Activity" button was clicked. */}
+        {activityBuilderTopic && (
+          <ActivityBuilder
+            topicId={activityBuilderTopic.topic_id}
+            topicTitle={activityBuilderTopic.title}
+            onClose={() => setActivityBuilderTopic(null)}
+            onCreated={() => setActivityBuilderTopic(null)}
+          />
         )}
       </main>
     </div>

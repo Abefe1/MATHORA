@@ -20,6 +20,7 @@ export default function StudentAnalysisPage() {
   const [topicScores, setTopicScores] = useState<TopicScore[]>([]);
   const [termSummaries, setTermSummaries] = useState<TermSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTerm, setSelectedTerm] = useState<1 | 2 | 3 | 'all'>('all');
 
   useEffect(() => {
     // Standard "load on mount" effect, same justified suppression used
@@ -52,6 +53,7 @@ export default function StudentAnalysisPage() {
   };
   const incorrect = Math.max(0, s.totalAttempted - s.totalCorrect);
   const accuracyPct = s.totalAttempted > 0 ? Math.round((s.totalCorrect / s.totalAttempted) * 100) : 0;
+  const visibleTopicScores = selectedTerm === 'all' ? topicScores : topicScores.filter((t) => t.term === selectedTerm);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
@@ -69,6 +71,16 @@ export default function StudentAnalysisPage() {
               Practice &amp; Progress
             </h1>
           </div>
+          <select
+            value={selectedTerm}
+            onChange={(e) => setSelectedTerm(e.target.value === 'all' ? 'all' : (Number(e.target.value) as 1 | 2 | 3))}
+            className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm font-mono text-slate-900 dark:text-white"
+          >
+            <option value="all">All Terms</option>
+            <option value={1}>Term 1</option>
+            <option value={2}>Term 2</option>
+            <option value={3}>Term 3</option>
+          </select>
         </div>
 
         {loading ? (
@@ -177,7 +189,16 @@ export default function StudentAnalysisPage() {
                   {termSummaries.map((t) => {
                     const termAccuracy = t.total_attempted > 0 ? Math.round((t.total_correct / t.total_attempted) * 100) : 0;
                     return (
-                      <div key={t.term} className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+                      <button
+                        key={t.term}
+                        type="button"
+                        onClick={() => setSelectedTerm((prev) => (prev === t.term ? 'all' : (t.term as 1 | 2 | 3)))}
+                        className={`text-left rounded-xl border p-4 transition-colors ${
+                          selectedTerm === t.term
+                            ? 'border-indigo-500 ring-1 ring-indigo-500'
+                            : 'border-slate-200 dark:border-slate-800'
+                        }`}
+                      >
                         <p className="text-xs font-display font-bold text-slate-900 dark:text-white">Term {t.term}</p>
                         <p className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">{t.average_mastery_percentage}%</p>
                         <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400 uppercase">avg. mastery</p>
@@ -185,7 +206,7 @@ export default function StudentAnalysisPage() {
                           <span>{t.topics_started} topics started</span>
                           <span>{termAccuracy}% accuracy</span>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -195,9 +216,14 @@ export default function StudentAnalysisPage() {
             {/* Score per exercise/topic, in syllabus order */}
             {topicScores.length > 0 && (
               <Card variant="paper" className="p-4 sm:p-6 mt-6">
-                <p className="text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-slate-400 mb-3">Score by Exercise</p>
+                <p className="text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-slate-400 mb-3">
+                  Score by Exercise{selectedTerm !== 'all' ? ` — Term ${selectedTerm}` : ''}
+                </p>
+                {visibleTopicScores.length === 0 && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">No exercises for this term yet.</p>
+                )}
                 <div className="space-y-2 max-h-105 overflow-y-auto pr-1">
-                  {topicScores.map((t) => {
+                  {visibleTopicScores.map((t) => {
                     const acc = t.total_attempted > 0 ? Math.round((t.total_correct / t.total_attempted) * 100) : 0;
                     return (
                       <div
