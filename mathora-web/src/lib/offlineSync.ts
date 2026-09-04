@@ -64,6 +64,57 @@ export function removeFromOfflineQueue(ids: string[]) {
   }
 }
 
+// --- Assignment-answer offline queue ---
+// Same shape/behavior as the attempts queue above, kept as a fully
+// separate localStorage key so a queued assignment answer and a queued
+// practice attempt never collide or get flushed by the wrong retry path.
+export interface OfflineAssignmentAnswer {
+  id: string;
+  assignment_id: string;
+  student_id: string;
+  question_id: string;
+  selected_option: 'A' | 'B' | 'C' | 'D' | 'E';
+  is_correct: boolean;
+  answered_at: string;
+}
+
+const ASSIGNMENT_ANSWER_STORAGE_KEY = 'mathora_offline_assignment_answers';
+
+export function enqueueAssignmentAnswer(answer: Omit<OfflineAssignmentAnswer, 'id' | 'answered_at'>) {
+  const queue = getOfflineAssignmentAnswerQueue();
+  const newEntry: OfflineAssignmentAnswer = {
+    ...answer,
+    id: `offline-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    answered_at: new Date().toISOString(),
+  };
+
+  queue.push(newEntry);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(ASSIGNMENT_ANSWER_STORAGE_KEY, JSON.stringify(queue));
+  }
+  return newEntry;
+}
+
+export function getOfflineAssignmentAnswerQueue(): OfflineAssignmentAnswer[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem(ASSIGNMENT_ANSWER_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function removeFromOfflineAssignmentAnswerQueue(ids: string[]) {
+  if (typeof window === 'undefined' || ids.length === 0) return;
+  const remaining = getOfflineAssignmentAnswerQueue().filter((a) => !ids.includes(a.id));
+  if (remaining.length > 0) {
+    localStorage.setItem(ASSIGNMENT_ANSWER_STORAGE_KEY, JSON.stringify(remaining));
+  } else {
+    localStorage.removeItem(ASSIGNMENT_ANSWER_STORAGE_KEY);
+  }
+}
+
 export const offlineSync = {
   saveAttemptOffline: enqueueAttempt,
   getQueue: getOfflineQueue,

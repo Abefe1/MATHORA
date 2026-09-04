@@ -21,14 +21,15 @@ export default function ClassScoresPage() {
 
   const [summary, setSummary] = useState<ClassScoreSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [term, setTerm] = useState<1 | 2 | 3 | 'all'>('all');
 
   const load = useCallback(async () => {
     if (!classId) return;
     setLoading(true);
-    const data = await fetchClassScoreSummary(classId);
+    const data = await fetchClassScoreSummary(classId, term === 'all' ? undefined : term);
     setSummary(data);
     setLoading(false);
-  }, [classId]);
+  }, [classId, term]);
 
   useEffect(() => {
     load();
@@ -60,12 +61,27 @@ export default function ClassScoresPage() {
           </p>
         </div>
 
+        <div className="mb-6">
+          <select
+            value={term}
+            onChange={(e) => setTerm(e.target.value === 'all' ? 'all' : (Number(e.target.value) as 1 | 2 | 3))}
+            className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm font-mono text-slate-900 dark:text-white"
+          >
+            <option value="all">All Terms</option>
+            <option value={1}>Term 1</option>
+            <option value={2}>Term 2</option>
+            <option value={3}>Term 3</option>
+          </select>
+        </div>
+
         {loading ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">Loading class scores...</p>
         ) : s.students.length === 0 ? (
           <Card variant="paper" className="p-6 text-center">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              No students have joined this class yet, or none have attempted a question.
+              {term === 'all'
+                ? 'No students have joined this class yet, or none have attempted a question.'
+                : `No students have attempted a Term ${term} topic yet.`}
             </p>
           </Card>
         ) : (

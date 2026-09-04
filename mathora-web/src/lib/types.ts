@@ -11,8 +11,42 @@ export type UserRole =
   | 'finance_admin'
   | 'super_admin';
 
-export type ClassLevel = 'JSS1' | 'JSS2' | 'JSS3' | 'SS1' | 'SS2' | 'SS3';
+// PRI1-PRI6 (primary/"basic" levels) are schema-ready ahead of any
+// actual primary-level content — see
+// mathora_schema_subjects_and_primary_levels_patch.sql. The platform
+// only serves JSS1-SS3 today.
+export type ClassLevel =
+  | 'PRI1' | 'PRI2' | 'PRI3' | 'PRI4' | 'PRI5' | 'PRI6'
+  | 'JSS1' | 'JSS2' | 'JSS3'
+  | 'SS1' | 'SS2' | 'SS3';
 export type ExamType = 'WAEC' | 'BECE' | 'JAMB' | 'NECO' | 'GENERAL';
+
+// Mirrors public.class_level_stage() in
+// mathora_schema_subjects_and_primary_levels_patch.sql — keep in sync.
+export type ClassStage = 'primary' | 'jss' | 'sss';
+
+export const CLASS_LEVEL_ORDER: readonly ClassLevel[] = [
+  'PRI1', 'PRI2', 'PRI3', 'PRI4', 'PRI5', 'PRI6',
+  'JSS1', 'JSS2', 'JSS3',
+  'SS1', 'SS2', 'SS3',
+];
+
+export function classLevelStage(level: ClassLevel): ClassStage {
+  if (level.startsWith('PRI')) return 'primary';
+  if (level.startsWith('JSS')) return 'jss';
+  return 'sss';
+}
+
+// A subject the platform teaches (public.subjects). MATHORA serves
+// only 'Mathematics' today; this exists so content, UI, and queries
+// can start being subject-scoped without a later rework.
+export interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  icon: string;
+  color?: string | null;
+}
 
 export interface UserProfile {
   id: string;
@@ -92,6 +126,8 @@ export interface Topic {
   id: string;
   title: string;
   class_level: ClassLevel;
+  term: number | null;
+  week: number | null;
   description: string;
   order_index: number;
   icon: string;
@@ -168,4 +204,65 @@ export interface ClassJoinRequest {
   status: ClassJoinRequestStatus;
   decided_at?: string | null;
   created_at: string;
+}
+
+// --- Interactive activities (mathora_schema_activities_patch.sql) ---
+// A second, non-MCQ practice mode scoped to a topic — step ordering,
+// matching pairs, fill-blank, classification. Subject-agnostic by
+// design: everything hangs off topic_id (see [[activities patch]] for
+// why). Each activity_type's activity_data shape is a distinct
+// interface below; ActivityData is the discriminated union the
+// player/builder components switch on.
+export type ActivityType = 'ordering' | 'matching' | 'fill_blank' | 'classify';
+
+export interface OrderingActivityData {
+  activity_type: 'ordering';
+  items: string[]; // shuffled for display; this array's own order is not the answer
+  correct_order: number[]; // indices into `items`, in correct sequence
+}
+
+export interface MatchingActivityData {
+  activity_type: 'matching';
+  pairs: { left: string; right: string }[];
+}
+
+export interface FillBlankActivityData {
+  activity_type: 'fill_blank';
+  text: string; // contains one or more `{{token}}` placeholders
+  blanks: { token: string; answer: string }[];
+}
+
+export interface ClassifyActivityData {
+  activity_type: 'classify';
+  groups: string[];
+  items: { text: string; group: string }[]; // `group` must be one of `groups`
+}
+
+export type ActivityData =
+  | OrderingActivityData
+  | MatchingActivityData
+  | FillBlankActivityData
+  | ClassifyActivityData;
+
+export type ActivityStatus = 'draft' | 'published' | 'rejected';
+
+export interface Activity {
+  id: string;
+  topic_id: string;
+  activity_type: ActivityType;
+  title: string;
+  instructions?: string | null;
+  activity_data: ActivityData;
+  status: ActivityStatus;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface ActivityAttempt {
+  id: string;
+  student_id: string;
+  activity_id: string;
+  score: number; // 0-100
+  time_taken_seconds: number;
+  attempted_at: string;
 }

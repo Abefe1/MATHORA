@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import NoCopyGuard from '@/components/NoCopyGuard';
 import { INITIAL_TOPICS } from '@/lib/mockData';
 import { Clock, Flag, Award, CheckCircle2, AlertCircle, Play, ChevronRight, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
+import { useCountdown } from '@/lib/useCountdown';
 
 export default function MockExamPage() {
   const [examStarted, setExamStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes timer
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
@@ -41,26 +41,14 @@ export default function MockExamPage() {
     }
   ];
 
-  useEffect(() => {
-    if (!examStarted || examSubmitted) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setExamSubmitted(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [examStarted, examSubmitted]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  // 10-minute mock exam timer — shared useCountdown hook (extracted from
+  // this page's own former inline setInterval) so the timed-assignment
+  // take-flow doesn't need a third independent copy of the same logic.
+  const { formatted: timeLeft } = useCountdown({
+    totalSeconds: 600,
+    onExpire: () => setExamSubmitted(true),
+    active: examStarted && !examSubmitted,
+  });
 
   const currentQ = mockQuestions[currentIdx];
 
@@ -100,7 +88,7 @@ export default function MockExamPage() {
             <div className="glass-card rounded-2xl p-4 mb-6 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-extrabold text-lg">
                 <Clock className="w-5 h-5 animate-pulse text-amber-500" />
-                <span>Timer: {formatTime(timeLeft)}</span>
+                <span>Timer: {timeLeft}</span>
               </div>
 
               <div className="flex items-center gap-2">

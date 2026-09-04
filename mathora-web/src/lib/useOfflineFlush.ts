@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { flushOfflineQueue } from '@/lib/supabase';
-import { getOfflineQueue } from '@/lib/offlineSync';
+import { flushOfflineQueue, flushOfflineAssignmentAnswers } from '@/lib/supabase';
+import { getOfflineQueue, getOfflineAssignmentAnswerQueue } from '@/lib/offlineSync';
 import { useAuth } from '@/lib/authContext';
 
 /**
@@ -21,20 +21,22 @@ export function useOfflineFlush() {
   // getOfflineQueue() is a synchronous localStorage read guarded for
   // typeof window === 'undefined', so the initial count can be derived
   // directly rather than set from an effect after mount.
-  const [pendingCount, setPendingCount] = useState(() => getOfflineQueue().length);
+  const [pendingCount, setPendingCount] = useState(
+    () => getOfflineQueue().length + getOfflineAssignmentAnswerQueue().length
+  );
   const [syncing, setSyncing] = useState(false);
 
   const refreshCount = useCallback(() => {
-    setPendingCount(getOfflineQueue().length);
+    setPendingCount(getOfflineQueue().length + getOfflineAssignmentAnswerQueue().length);
   }, []);
 
   const flush = useCallback(async () => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return;
-    if (getOfflineQueue().length === 0) return;
+    if (getOfflineQueue().length === 0 && getOfflineAssignmentAnswerQueue().length === 0) return;
 
     setSyncing(true);
     try {
-      await flushOfflineQueue();
+      await Promise.all([flushOfflineQueue(), flushOfflineAssignmentAnswers()]);
     } finally {
       setSyncing(false);
       refreshCount();

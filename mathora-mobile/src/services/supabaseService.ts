@@ -119,7 +119,15 @@ export async function recordMobileAttempt(attempt: {
 // same explanation.
 // ==========================================
 
-export type ClassLevel = 'JSS1' | 'JSS2' | 'JSS3' | 'SS1' | 'SS2' | 'SS3';
+// PRI1-PRI6 (primary/"basic" levels) are schema-ready ahead of any
+// actual primary-level content — see
+// mathora_schema_subjects_and_primary_levels_patch.sql. The platform
+// only serves JSS1-SS3 today. Kept in sync with mathora-web's
+// lib/types.ts ClassLevel by hand (two copies, same DB enum).
+export type ClassLevel =
+  | 'PRI1' | 'PRI2' | 'PRI3' | 'PRI4' | 'PRI5' | 'PRI6'
+  | 'JSS1' | 'JSS2' | 'JSS3'
+  | 'SS1' | 'SS2' | 'SS3';
 export type SchoolStatus = 'active' | 'pending' | 'rejected';
 
 export interface School {

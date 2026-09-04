@@ -1,14 +1,36 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
 import { INITIAL_TOPICS, INITIAL_MASTERY } from '@/lib/mockData';
 import { Sparkles, ArrowRight, Play, AlertTriangle, BarChart2 } from 'lucide-react';
+import { fetchMyAssignments, fetchMyStudentProfileId, fetchAnalysisStats, type StudentAssignmentRow, type AnalysisStats } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function StudentDashboard() {
+  const { user } = useAuth();
+  const [pendingAssignments, setPendingAssignments] = useState<StudentAssignmentRow[]>([]);
+  const [stats, setStats] = useState<AnalysisStats | null>(null);
+
+  useEffect(() => {
+    fetchMyAssignments().then((rows) => {
+      setPendingAssignments(rows.filter((a) => a.status === 'not_started' || a.status === 'in_progress').slice(0, 3));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMyStudentProfileId(user.id).then((profileId) => {
+      if (!profileId) return;
+      fetchAnalysisStats(profileId).then(setStats);
+    });
+  }, [user?.id]);
+
+  const accuracyPct = stats && stats.totalAttempted > 0 ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100) : 0;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
       <Navbar currentRole="student" userName="Chidiebere Okafor" />
@@ -118,23 +140,36 @@ export default function StudentDashboard() {
                 <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Pending Teacher Assignments
               </h3>
 
-              <div className="space-y-3">
-                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Quadratic Practice Set #1
-                    </span>
-                    <Badge variant="struggling">Due Tomorrow</Badge>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Class: SS2 Science A (Mr. Bello)</p>
-                  <Link
-                    href="/student/practice"
-                    className="mt-2.5 inline-flex items-center gap-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
-                  >
-                    Start Assignment <ArrowRight className="w-3 h-3" />
-                  </Link>
+              {pendingAssignments.length === 0 ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400">Nothing pending — you&apos;re all caught up.</p>
+              ) : (
+                <div className="space-y-3">
+                  {pendingAssignments.map((a) => (
+                    <div key={a.id} className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{a.title}</span>
+                        <Badge variant={a.status === 'in_progress' ? 'mastered' : 'struggling'}>
+                          {a.status === 'in_progress' ? 'In Progress' : `Due ${new Date(a.due_date).toLocaleDateString()}`}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">{a.class_name}</p>
+                      <Link
+                        href={`/student/assignments/${a.id}/take`}
+                        className="mt-2.5 inline-flex items-center gap-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                      >
+                        {a.status === 'in_progress' ? 'Continue Assignment' : 'Start Assignment'} <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
+
+              <Link
+                href="/student/assignments"
+                className="mt-4 flex items-center justify-center gap-1.5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 hover:underline"
+              >
+                View All Assignments <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </Card>
 
             {/* Learning Stats */}
@@ -145,11 +180,13 @@ export default function StudentDashboard() {
 
               <div className="grid grid-cols-2 gap-4 text-center font-mono">
                 <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">15</p>
+                  <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{stats?.totalAttempted ?? '—'}</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Questions Solved</p>
                 </div>
                 <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">80%</p>
+                  <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                    {stats && stats.totalAttempted > 0 ? `${accuracyPct}%` : '—'}
+                  </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Accuracy Score</p>
                 </div>
               </div>

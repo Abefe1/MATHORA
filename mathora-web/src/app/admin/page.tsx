@@ -5,7 +5,10 @@ import Navbar from '@/components/Navbar';
 import MathRenderer from '@/components/MathRenderer';
 import { INITIAL_TOPICS } from '@/lib/mockData';
 import { createClient } from '@/lib/supabase/client';
-import type { Topic, ExamType } from '@/lib/types';
+import type { Topic, ExamType, ClassLevel } from '@/lib/types';
+import { useToast } from '@/lib/toastContext';
+
+const CLASS_LEVELS: ClassLevel[] = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3'];
 import { ShieldCheck, Plus, BookOpen, Layers, CheckCircle2, AlertCircle, BarChart, Database, Upload, FileText, Loader2, Check, X } from 'lucide-react';
 
 type ContentUpload = {
@@ -35,6 +38,7 @@ type DraftQuestion = {
 };
 
 export default function AdminCMS() {
+  const showToast = useToast();
   // Seeded from mock data so the page renders something immediately;
   // replaced by loadAuthoredContent() below with the real topics/
   // questions.select('*') result the moment Supabase answers (or left
@@ -55,6 +59,10 @@ export default function AdminCMS() {
   const [saveQuestionError, setSaveQuestionError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'authored' | 'upload' | 'review'>('authored');
+
+  // --- Authored Content filters ---
+  const [filterClassLevel, setFilterClassLevel] = useState<ClassLevel | 'all'>('all');
+  const [filterTerm, setFilterTerm] = useState<1 | 2 | 3 | 'all'>('all');
 
   // --- Upload & Generate ---
   const [uploadTopicId, setUploadTopicId] = useState(INITIAL_TOPICS[0]?.id ?? '');
@@ -79,7 +87,7 @@ export default function AdminCMS() {
     }
     setTopicsLoading(true);
     const [{ data: topicRows }, { data: questionRows }] = await Promise.all([
-      supabase.from('topics').select('id, title, class_level, description, order_index, icon').order('order_index'),
+      supabase.from('topics').select('id, title, class_level, term, week, description, order_index, icon').order('order_index'),
       supabase
         .from('questions')
         .select('id, topic_id, question_text, explanation, exam_type, exam_shortcut, difficulty')
@@ -108,6 +116,8 @@ export default function AdminCMS() {
       id: t.id,
       title: t.title,
       class_level: t.class_level,
+      term: t.term ?? null,
+      week: t.week ?? null,
       description: t.description ?? '',
       order_index: t.order_index ?? 1,
       icon: t.icon ?? 'Calculator',
@@ -202,8 +212,13 @@ export default function AdminCMS() {
   const reviewQuestion = async (id: string, decision: 'published' | 'rejected') => {
     const supabase = createClient();
     if (!supabase) return;
-    await supabase.from('questions').update({ status: decision }).eq('id', id);
+    const { error } = await supabase.from('questions').update({ status: decision }).eq('id', id);
+    if (error) {
+      showToast(`Failed to ${decision === 'published' ? 'approve' : 'reject'} question.`, 'error');
+      return;
+    }
     setDraftQuestions((prev) => prev.filter((q) => q.id !== id));
+    showToast(decision === 'published' ? 'Question approved and published.' : 'Question rejected.', 'success');
     // A newly-published question should show up under Authored Content
     // without waiting for the next tab switch/reload.
     if (decision === 'published') loadAuthoredContent();
@@ -244,9 +259,11 @@ export default function AdminCMS() {
 
     if (error || !data) {
       setSaveQuestionError(error?.message ?? 'Failed to save question.');
+      showToast(error?.message ?? 'Failed to save question.', 'error');
       return;
     }
 
+    showToast('Question published to the bank.', 'success');
     setTopics((prev) =>
       prev.map((t) =>
         t.id === data.topic_id
@@ -280,6 +297,12 @@ export default function AdminCMS() {
     setNewCorrectLetter('A');
     setShowQuestionModal(false);
   };
+
+  const visibleTopics = topics.filter(
+    (t) =>
+      (filterClassLevel === 'all' || t.class_level === filterClassLevel) &&
+      (filterTerm === 'all' || t.term === filterTerm)
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">
@@ -509,17 +532,53 @@ export default function AdminCMS() {
         {/* Content Management Cards */}
         {activeTab === 'authored' && (
         <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={filterClassLevel}
+              onChange={(e) => setFilterClassLevel(e.target.value as ClassLevel | 'all')}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+            >
+              <option value="all">All Levels</option>
+              {CLASS_LEVELS.map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
+            <select
+              value={filterTerm}
+              onChange={(e) => setFilterTerm(e.target.value === 'all' ? 'all' : (Number(e.target.value) as 1 | 2 | 3))}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+            >
+              <option value="all">All Terms</option>
+              <option value={1}>Term 1</option>
+              <option value={2}>Term 2</option>
+              <option value={3}>Term 3</option>
+            </select>
+          </div>
+
           {topicsLoading && <Loader2 className="w-5 h-5 text-slate-500 dark:text-slate-400 animate-spin" />}
           {!topicsLoading && topics.length === 0 && (
             <p className="text-xs text-slate-500">No topics yet — add one in Supabase&apos;s `topics` table first.</p>
           )}
-          {topics.map((topic) => (
+          {!topicsLoading && topics.length > 0 && visibleTopics.length === 0 && (
+            <p className="text-xs text-slate-500">No topics match this filter.</p>
+          )}
+          {visibleTopics.map((topic) => (
             <div key={topic.id} className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600">
                     {topic.class_level}
                   </span>
+                  {topic.term != null && (
+                    <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950 text-cyan-600">
+                      Term {topic.term}
+                    </span>
+                  )}
+                  {topic.week != null && (
+                    <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-600">
+                      Week {topic.week}
+                    </span>
+                  )}
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-1">
                     {topic.title}
                   </h2>

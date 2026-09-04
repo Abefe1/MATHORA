@@ -3,6 +3,8 @@ import { Space_Grotesk, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/goog
 import "./globals.css";
 import { ThemeProvider } from "@/lib/themeContext";
 import { AuthProvider } from "@/lib/authContext";
+import { ToastProvider } from "@/lib/toastContext";
+import Toaster from "@/components/ui/Toaster";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -39,7 +41,12 @@ export default function RootLayout({
     >
       <body className="font-sans antialiased bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen selection:bg-amber-500 selection:text-slate-950">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <ToastProvider>
+              {children}
+              <Toaster />
+            </ToastProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

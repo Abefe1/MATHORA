@@ -63,20 +63,13 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
           { label: 'Squads', href: '/student/groups' },
         ];
       case 'teacher':
-        return [
-          { label: 'Teacher Portal', href: '/teacher' },
-          { label: 'Classes & Roster', href: '/teacher' },
-          { label: 'Question Bank', href: '/admin' },
-        ];
+        return [{ label: 'Teacher Portal', href: '/teacher' }];
       case 'parent':
-        return [
-          { label: 'Parent Overview', href: '/parent' },
-          { label: 'Child Progress', href: '/parent' },
-        ];
+        return [{ label: 'Parent Overview', href: '/parent' }];
       default:
         return [
-          { label: 'Admin CMS', href: '/admin' },
           { label: 'Curriculum Engine', href: '/admin' },
+          { label: 'Schools', href: '/admin/schools' },
         ];
     }
   };
@@ -245,9 +238,14 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
             </div>
           )}
 
-          <Link href="/student/settings" className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg">
-            <Settings className="w-4 h-4" />
-          </Link>
+          {/* No teacher/admin/parent settings page exists yet — only
+              show this for students rather than sending every other
+              role to the student settings page. */}
+          {currentRole === 'student' && (
+            <Link href="/student/settings" className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg">
+              <Settings className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       </div>
     </header>

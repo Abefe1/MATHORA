@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { ShieldCheck, School as SchoolIcon, Check, X, Trash2, BadgeCheck, Power } from 'lucide-react';
 
 import {
@@ -13,13 +14,17 @@ import {
   updatePlatformSelfServeEnabled,
 } from '@/lib/supabase';
 import type { School, SchoolStatus } from '@/lib/types';
+import { useToast } from '@/lib/toastContext';
 
 export default function AdminSchoolsPage() {
+  const showToast = useToast();
   const [activeTab, setActiveTab] = useState<SchoolStatus>('pending');
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(false);
   const [selfServeEnabled, setSelfServeEnabled] = useState(true);
   const [togglingSwitch, setTogglingSwitch] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<School | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,20 +43,44 @@ export default function AdminSchoolsPage() {
   }, [load]);
 
   const handleApprove = async (id: string) => {
-    if (await updateSchoolStatus(id, 'active')) load();
+    if (await updateSchoolStatus(id, 'active')) {
+      load();
+      showToast('School approved.', 'success');
+    } else {
+      showToast('Failed to approve school.', 'error');
+    }
   };
 
   const handleReject = async (id: string) => {
-    if (await updateSchoolStatus(id, 'rejected')) load();
+    if (await updateSchoolStatus(id, 'rejected')) {
+      load();
+      showToast('School rejected.', 'success');
+    } else {
+      showToast('Failed to reject school.', 'error');
+    }
   };
 
   const handleToggleVerified = async (school: School) => {
-    if (await toggleSchoolVerified(school.id, !school.verified)) load();
+    if (await toggleSchoolVerified(school.id, !school.verified)) {
+      load();
+      showToast(school.verified ? 'Verification removed.' : 'School verified.', 'success');
+    } else {
+      showToast('Failed to update verification.', 'error');
+    }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Permanently delete this school? This cannot be undone.')) return;
-    if (await deleteSchool(id)) load();
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const ok = await deleteSchool(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
+    if (ok) {
+      load();
+      showToast('School deleted.', 'success');
+    } else {
+      showToast('Failed to delete school.', 'error');
+    }
   };
 
   const handleToggleSwitch = async () => {
@@ -59,6 +88,10 @@ export default function AdminSchoolsPage() {
     const ok = await updatePlatformSelfServeEnabled(!selfServeEnabled);
     if (ok) setSelfServeEnabled((prev) => !prev);
     setTogglingSwitch(false);
+    showToast(
+      ok ? `Self-serve creation turned ${!selfServeEnabled ? 'ON' : 'OFF'}.` : 'Failed to update self-serve setting.',
+      ok ? 'success' : 'error'
+    );
   };
 
   return (
@@ -174,7 +207,7 @@ export default function AdminSchoolsPage() {
                   </button>
                 )}
                 <button
-                  onClick={() => handleDelete(s.id)}
+                  onClick={() => setDeleteTarget(s)}
                   className="p-2 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-500 dark:text-slate-400 transition-colors"
                   title="Delete permanently"
                 >
@@ -185,6 +218,17 @@ export default function AdminSchoolsPage() {
           ))}
         </div>
       </main>
+
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        title="Delete this school?"
+        message={`"${deleteTarget?.name}" will be permanently removed. This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        busy={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
