@@ -7,16 +7,29 @@ import MathRenderer from '@/components/MathRenderer';
 import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
 import { INITIAL_TOPICS, INITIAL_MASTERY } from '@/lib/mockData';
 import { Sparkles, ArrowRight, Play, AlertTriangle, BarChart2 } from 'lucide-react';
-import { fetchMyAssignments, type StudentAssignmentRow } from '@/lib/supabase';
+import { fetchMyAssignments, fetchMyStudentProfileId, fetchAnalysisStats, type StudentAssignmentRow, type AnalysisStats } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function StudentDashboard() {
+  const { user } = useAuth();
   const [pendingAssignments, setPendingAssignments] = useState<StudentAssignmentRow[]>([]);
+  const [stats, setStats] = useState<AnalysisStats | null>(null);
 
   useEffect(() => {
     fetchMyAssignments().then((rows) => {
       setPendingAssignments(rows.filter((a) => a.status === 'not_started' || a.status === 'in_progress').slice(0, 3));
     });
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMyStudentProfileId(user.id).then((profileId) => {
+      if (!profileId) return;
+      fetchAnalysisStats(profileId).then(setStats);
+    });
+  }, [user?.id]);
+
+  const accuracyPct = stats && stats.totalAttempted > 0 ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
@@ -167,11 +180,13 @@ export default function StudentDashboard() {
 
               <div className="grid grid-cols-2 gap-4 text-center font-mono">
                 <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">15</p>
+                  <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{stats?.totalAttempted ?? '—'}</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Questions Solved</p>
                 </div>
                 <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">80%</p>
+                  <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                    {stats && stats.totalAttempted > 0 ? `${accuracyPct}%` : '—'}
+                  </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Accuracy Score</p>
                 </div>
               </div>

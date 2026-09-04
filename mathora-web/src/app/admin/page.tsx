@@ -6,6 +6,7 @@ import MathRenderer from '@/components/MathRenderer';
 import { INITIAL_TOPICS } from '@/lib/mockData';
 import { createClient } from '@/lib/supabase/client';
 import type { Topic, ExamType, ClassLevel } from '@/lib/types';
+import { useToast } from '@/lib/toastContext';
 
 const CLASS_LEVELS: ClassLevel[] = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3'];
 import { ShieldCheck, Plus, BookOpen, Layers, CheckCircle2, AlertCircle, BarChart, Database, Upload, FileText, Loader2, Check, X } from 'lucide-react';
@@ -37,6 +38,7 @@ type DraftQuestion = {
 };
 
 export default function AdminCMS() {
+  const showToast = useToast();
   // Seeded from mock data so the page renders something immediately;
   // replaced by loadAuthoredContent() below with the real topics/
   // questions.select('*') result the moment Supabase answers (or left
@@ -210,8 +212,13 @@ export default function AdminCMS() {
   const reviewQuestion = async (id: string, decision: 'published' | 'rejected') => {
     const supabase = createClient();
     if (!supabase) return;
-    await supabase.from('questions').update({ status: decision }).eq('id', id);
+    const { error } = await supabase.from('questions').update({ status: decision }).eq('id', id);
+    if (error) {
+      showToast(`Failed to ${decision === 'published' ? 'approve' : 'reject'} question.`, 'error');
+      return;
+    }
     setDraftQuestions((prev) => prev.filter((q) => q.id !== id));
+    showToast(decision === 'published' ? 'Question approved and published.' : 'Question rejected.', 'success');
     // A newly-published question should show up under Authored Content
     // without waiting for the next tab switch/reload.
     if (decision === 'published') loadAuthoredContent();
@@ -252,9 +259,11 @@ export default function AdminCMS() {
 
     if (error || !data) {
       setSaveQuestionError(error?.message ?? 'Failed to save question.');
+      showToast(error?.message ?? 'Failed to save question.', 'error');
       return;
     }
 
+    showToast('Question published to the bank.', 'success');
     setTopics((prev) =>
       prev.map((t) =>
         t.id === data.topic_id

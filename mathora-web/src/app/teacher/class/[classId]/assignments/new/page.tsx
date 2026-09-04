@@ -18,11 +18,13 @@ import {
   type QuestionBankRow,
 } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
+import { useToast } from '@/lib/toastContext';
 import type { ClassLevel } from '@/lib/types';
 
 export default function NewAssignmentPage() {
   const params = useParams();
   const router = useRouter();
+  const showToast = useToast();
   const { user } = useAuth();
   const classId = params.classId as string;
 
@@ -125,6 +127,7 @@ export default function NewAssignmentPage() {
     // and gets pre-selected into this assignment.
     setBank((prev) => [result.question!, ...prev]);
     setSelectedIds((prev) => [...prev, result.question!.id]);
+    showToast('Question added to the bank and selected.', 'success');
 
     setCustomText('');
     setCustomA('');
@@ -164,9 +167,11 @@ export default function NewAssignmentPage() {
 
     if (!result.success || !result.assignmentId) {
       setSubmitError(result.error ?? 'Failed to create assignment.');
+      showToast(result.error ?? 'Failed to create assignment.', 'error');
       return;
     }
 
+    showToast('Assignment created.', 'success');
     router.push(`/teacher/class/${classId}/assignments/${result.assignmentId}`);
   };
 

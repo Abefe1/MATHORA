@@ -11,6 +11,7 @@ import { ArrowLeft, UserPlus, Upload, Users, Inbox, Check, X, Download } from 'l
 import { bulkAddRosterEntries, fetchClassRoster, fetchPendingJoinRequests, decideJoinRequest, fetchClassScoreSummary, type ClassStudentScore } from '@/lib/supabase';
 import type { ClassRosterEntry, ClassJoinRequest } from '@/lib/types';
 import { downloadCsv } from '@/lib/csv';
+import { useToast } from '@/lib/toastContext';
 
 type ParsedRow = { full_name: string; verification_value?: string };
 
@@ -36,6 +37,7 @@ function normalizeRows(rows: Record<string, unknown>[]): ParsedRow[] {
 export default function ClassRosterPage() {
   const params = useParams();
   const classId = params.classId as string;
+  const showToast = useToast();
 
   const [roster, setRoster] = useState<ClassRosterEntry[]>([]);
   const [requests, setRequests] = useState<ClassJoinRequest[]>([]);
@@ -153,9 +155,13 @@ export default function ClassRosterPage() {
 
   const handleDecide = async (requestId: string, approve: boolean) => {
     setBusy(true);
-    await decideJoinRequest(requestId, approve);
+    const ok = await decideJoinRequest(requestId, approve);
     setBusy(false);
     load();
+    showToast(
+      ok ? (approve ? 'Join request approved.' : 'Join request rejected.') : 'Failed to update join request.',
+      ok ? 'success' : 'error'
+    );
   };
 
   return (

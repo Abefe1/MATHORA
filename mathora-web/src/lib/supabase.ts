@@ -1350,6 +1350,15 @@ export async function submitAssignmentAnswer(answer: AssignmentAnswerInput): Pro
 
 // Retries every locally-queued assignment answer — call this on
 // reconnect, same as flushOfflineQueue (see lib/useOfflineFlush.ts).
+//
+// Edge case this also closes: if a student's LAST answer on a timed
+// assignment gets queued offline right as they finish, the take-flow
+// still calls complete_assignment_submission immediately afterward —
+// so the score gets computed one answer short, before this queued
+// entry ever reaches the DB. Once it does sync here, re-run completion
+// for any assignment that's already marked completed among the
+// synced entries, so the score gets corrected rather than staying
+// permanently one answer short.
 export async function flushOfflineAssignmentAnswers(): Promise<{ synced: number; remaining: number }> {
   const supabase = createClient();
   const queue: OfflineAssignmentAnswer[] = getOfflineAssignmentAnswerQueue();
@@ -1358,14 +1367,42 @@ export async function flushOfflineAssignmentAnswers(): Promise<{ synced: number;
   }
 
   const syncedIds: string[] = [];
+  const syncedAssignmentIds = new Set<string>();
   for (const entry of queue) {
     const ok = await insertAssignmentAnswerRow(entry);
-    if (ok) syncedIds.push(entry.id);
+    if (ok) {
+      syncedIds.push(entry.id);
+      syncedAssignmentIds.add(entry.assignment_id);
+    }
   }
 
   if (syncedIds.length > 0) removeFromOfflineAssignmentAnswerQueue(syncedIds);
+  if (syncedAssignmentIds.size > 0) await recomputeCompletedAssignmentScores(Array.from(syncedAssignmentIds));
 
   return { synced: syncedIds.length, remaining: queue.length - syncedIds.length };
+}
+
+// Re-derives the score for any of the given assignments that are
+// ALREADY marked completed — never for one still in progress, since
+// that would end it prematurely for a student mid-attempt whose
+// earlier answer just happened to sync late. Safe to call repeatedly:
+// complete_assignment_submission is idempotent, always recomputing
+// from whatever assignment_answers rows actually exist.
+async function recomputeCompletedAssignmentScores(assignmentIds: string[]): Promise<void> {
+  const supabase = createClient();
+  if (!supabase || assignmentIds.length === 0) return;
+  try {
+    const { data } = await supabase
+      .from('assignment_submissions')
+      .select('assignment_id')
+      .in('assignment_id', assignmentIds)
+      .eq('completed', true);
+    for (const row of data ?? []) {
+      await completeAssignmentSubmission({ assignmentId: row.assignment_id });
+    }
+  } catch {
+    // best-effort correction, not critical path
+  }
 }
 
 // Score is deliberately NOT a parameter here — mathora_schema_assignments_
