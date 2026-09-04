@@ -82,6 +82,14 @@ export default function ProfileScreen() {
             />
           </View>
 
+          <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/assignments')}>
+            <View>
+              <Text style={styles.settingLabel}>My Assignments</Text>
+              <Text style={styles.settingSub}>Teacher-set work, due dates, and scores</Text>
+            </View>
+            <Text style={styles.settingValue}>→</Text>
+          </TouchableOpacity>
+
           <View style={[styles.settingRow, styles.settingRowLast]}>
             <View>
               <Text style={styles.settingLabel}>Theme</Text>

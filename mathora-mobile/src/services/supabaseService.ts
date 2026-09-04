@@ -491,6 +491,51 @@ export async function fetchAnalysisStats(studentProfileId: string): Promise<Anal
   }
 }
 
+// --- Per-topic mastery breakdown for one student — mirrors
+// mathora-web/src/lib/supabase.ts's fetchTopicScores exactly. Needed
+// because dataService.Topic's mastery_percentage/status fields are
+// mock-only: the live `topics` table has no such columns, so
+// getMobileTopics()'s real rows come back with those fields undefined.
+// This is the real source for a topic's mastery.
+export interface TopicScore {
+  topic_id: string;
+  topic_title: string;
+  class_level: string;
+  term: number | null;
+  order_index: number;
+  total_attempted: number;
+  total_correct: number;
+  mastery_percentage: number;
+}
+
+export async function fetchTopicScores(studentProfileId: string): Promise<TopicScore[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('topic_mastery')
+      .select('topic_id, total_attempted, total_correct, mastery_percentage, topics!inner(title, class_level, term, order_index)')
+      .eq('student_id', studentProfileId);
+    if (error || !data) return [];
+    return (data as unknown as {
+      topic_id: string; total_attempted: number; total_correct: number; mastery_percentage: number;
+      topics: { title: string; class_level: string; term: number | null; order_index: number };
+    }[])
+      .map((row) => ({
+        topic_id: row.topic_id,
+        topic_title: row.topics.title,
+        class_level: row.topics.class_level,
+        term: row.topics.term,
+        order_index: row.topics.order_index,
+        total_attempted: row.total_attempted,
+        total_correct: row.total_correct,
+        mastery_percentage: row.mastery_percentage,
+      }))
+      .sort((a, b) => a.order_index - b.order_index);
+  } catch {
+    return [];
+  }
+}
+
 // --- Class score summary (roster export "with scores") — mirrors
 // mathora-web/src/lib/supabase.ts's fetchClassScoreSummary exactly:
 // same tables, same term-scoped topic_mastery join, same aggregation.
@@ -519,7 +564,7 @@ export async function fetchClassScoreSummary(classId: string, term?: 1 | 2 | 3):
       .eq('class_id', classId);
     if (membersError || !members || members.length === 0) return empty;
 
-    const rows = members as unknown as Array<{ student_id: string; students: { id: string; users: { full_name: string } } }>;
+    const rows = members as unknown as { student_id: string; students: { id: string; users: { full_name: string } } }[];
     const studentIds = rows.map((r) => r.student_id);
 
     const masteryQuery = term
@@ -904,10 +949,10 @@ export async function fetchAssignmentSubmissions(assignmentId: string, classId: 
       .eq('class_id', classId);
     if (membersError || !members) return [];
 
-    const rows = members as unknown as Array<{
+    const rows = members as unknown as {
       student_id: string;
       students: { id: string; user_id: string; users: { full_name: string } };
-    }>;
+    }[];
 
     const { data: submissions } = await supabase
       .from('assignment_submissions')
@@ -968,7 +1013,6 @@ export async function fetchMyAssignments(): Promise<StudentAssignmentRow[]> {
     if (error || !data) return [];
 
     const now = Date.now();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (data as any[]).map((a) => {
       const sub = Array.isArray(a.assignment_submissions) ? a.assignment_submissions[0] : a.assignment_submissions;
       const dueMs = new Date(a.due_date).getTime();
@@ -1003,6 +1047,7 @@ export interface MobileQuestion {
   explanation: string;
   difficulty: number;
   exam_type: string;
+  exam_shortcut?: string;
 }
 
 function mapQuestionRow(q: {
@@ -1018,6 +1063,7 @@ function mapQuestionRow(q: {
   explanation: string;
   difficulty: number | null;
   exam_type: string | null;
+  exam_shortcut?: string | null;
 }): MobileQuestion {
   const correctLetter = q.correct_letter || 'A';
   const options = [
@@ -1035,7 +1081,24 @@ function mapQuestionRow(q: {
     explanation: q.explanation ?? '',
     difficulty: q.difficulty ?? 2,
     exam_type: q.exam_type ?? 'GENERAL',
+    exam_shortcut: q.exam_shortcut ?? undefined,
   };
+}
+
+// General-purpose question fetcher for a topic — used by practice.tsx.
+// Shares MobileQuestion/mapQuestionRow with fetchAssignmentForTaking
+// above rather than a second parallel type+mapper.
+export async function fetchMobileQuestions(topicId?: string): Promise<MobileQuestion[]> {
+  if (!supabase) return [];
+  try {
+    let query = supabase.from('questions').select('*');
+    if (topicId) query = query.eq('topic_id', topicId);
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return data.map(mapQuestionRow);
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchAssignmentForTaking(assignmentId: string): Promise<{
@@ -1059,7 +1122,6 @@ export async function fetchAssignmentForTaking(assignmentId: string): Promise<{
     if (aqError || !aq) return { assignment, questions: [] };
 
     const questions = aq
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((row: any) => row.questions)
       .filter(Boolean)
       .map(mapQuestionRow);

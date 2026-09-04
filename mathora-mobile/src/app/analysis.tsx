@@ -53,8 +53,15 @@ export default function AnalysisScreen() {
           <Text style={styles.backText}>← Back to Dashboard</Text>
         </TouchableOpacity>
 
-        <Text style={styles.badge}>YOUR ANALYSIS</Text>
-        <Text style={styles.title}>Practice &amp; Progress</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.badge}>YOUR ANALYSIS</Text>
+            <Text style={styles.title}>Practice &amp; Progress</Text>
+          </View>
+          <TouchableOpacity style={styles.assignmentsBtn} onPress={() => router.push('/assignments')}>
+            <Text style={styles.assignmentsBtnText}>My Assignments →</Text>
+          </TouchableOpacity>
+        </View>
 
         {loading ? (
           <Text style={styles.mutedText}>Loading your analysis...</Text>
@@ -142,7 +149,10 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
     backBtn: { marginBottom: 12 },
     backText: { color: colors.primary, fontSize: 14, fontWeight: 'bold' },
     badge: { color: colors.primary, fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-    title: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginTop: 4, marginBottom: 16 },
+    title: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
+    assignmentsBtn: { backgroundColor: colors.surfaceSecondary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+    assignmentsBtnText: { color: colors.primary, fontSize: 11, fontWeight: 'bold' },
     mutedText: { color: colors.textMuted, fontSize: 13 },
     ringRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
     ringCard: {

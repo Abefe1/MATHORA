@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -13,16 +13,27 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/hooks/use-theme';
-import { STUDY_SQUADS_DATA, StudySquad } from '@/services/dataService';
+import { StudySquad } from '@/services/dataService';
+import { getMobileStudySquads } from '@/services/supabaseService';
 
 export default function ProgressScreen() {
   const router = useRouter();
   const colors = useTheme();
   const scheme = useColorScheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [squads] = useState<StudySquad[]>(STUDY_SQUADS_DATA);
+  // getMobileStudySquads() reads study_groups_with_stats (a real view,
+  // mathora_schema_study_groups_patch.sql) and falls back to the mock
+  // list itself if unreachable — no separate mock/live branch needed
+  // here. "Join Squad" stays a stub: join_study_group_with_code exists
+  // as a real RPC, but nothing on either platform calls it yet — that's
+  // net-new feature work, not a mobile-behind-web porting gap.
+  const [squads, setSquads] = useState<StudySquad[]>([]);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
+
+  useEffect(() => {
+    getMobileStudySquads().then(setSquads);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,42 +10,96 @@ import {
   Modal,
   useColorScheme,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/hooks/use-theme';
+import { MathView } from '@/components/math-view';
 import { useBlockScreenCapture } from '@/hooks/useBlockScreenCapture';
 import { reportScreenshotAttempt } from '@/services/screenSecurity';
+import { useAuth } from '@/lib/authContext';
+import {
+  getMobileTopics,
+  fetchMobileQuestions,
+  recordMobileAttempt,
+  type MobileQuestion,
+} from '@/services/supabaseService';
+import type { Topic } from '@/services/dataService';
 
+type MobileQuestionOption = MobileQuestion['options'][number];
+
+// Real, Supabase-wired practice screen — this used to be entirely
+// hardcoded mock UI (one fixed question, fake options). Mirrors
+// mathora-web/src/app/student/practice/page.tsx's flow: pick a topic
+// (via ?topicId= param, or default to the first topic), fetch its
+// real questions, answer/submit/next, record each attempt.
 export default function PracticeScreen() {
   const router = useRouter();
   const colors = useTheme();
   const scheme = useColorScheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { user } = useAuth();
+  const { topicId: topicIdParam } = useLocalSearchParams<{ topicId?: string }>();
   useBlockScreenCapture({ onScreenshotDetected: () => reportScreenshotAttempt('practice') });
 
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
+  const [questions, setQuestions] = useState<MobileQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [questionIndex, setQuestionIndex] = useState(0);
+
+  const [selectedOption, setSelectedOption] = useState<MobileQuestionOption | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showMistakeModal, setShowMistakeModal] = useState(false);
 
-  const question = {
-    title: 'Quadratic Equations',
-    index: 4,
-    total: 10,
-    equation: 'x² - 5x + 6 = 0',
-    options: [
-      { id: 'opt-a', letter: 'A', text: 'x = 2 or x = 3', isCorrect: true },
-      { id: 'opt-b', letter: 'B', text: 'x = -2 or x = -3', isCorrect: false },
-      { id: 'opt-c', letter: 'C', text: 'x = 1 or x = 6', isCorrect: false },
-      { id: 'opt-d', letter: 'D', text: 'x = -1 or x = -6', isCorrect: false },
-    ],
-  };
+  useEffect(() => {
+    getMobileTopics().then((data) => {
+      const target = topicIdParam ? data.find((t) => t.id === topicIdParam) : data[0];
+      const found = target ?? data[0] ?? null;
+      setCurrentTopic(found);
+      if (!found) setLoading(false); // no topics at all — nothing to fetch questions for
+    });
+  }, [topicIdParam]);
+
+  useEffect(() => {
+    if (!currentTopic) return;
+    // Standard "load on selection change" effect — same justified
+    // suppression used for this pattern elsewhere in the app (see
+    // roster.tsx / activities.tsx).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    fetchMobileQuestions(currentTopic.id).then((data) => {
+      setQuestions(data);
+      setQuestionIndex(0);
+      setSelectedOption(null);
+      setIsSubmitted(false);
+      setLoading(false);
+    });
+  }, [currentTopic]);
+
+  const question = questions[questionIndex];
 
   const handleCheckAnswer = () => {
-    if (!selectedOption) return;
+    if (!selectedOption || !question) return;
     setIsSubmitted(true);
-    const chosen = question.options.find((o) => o.id === selectedOption);
-    if (!chosen?.isCorrect) {
-      setShowMistakeModal(true);
+    const isCorrect = selectedOption.is_correct;
+    if (!isCorrect) setShowMistakeModal(true);
+
+    if (user) {
+      recordMobileAttempt({
+        student_id: user.id,
+        question_id: question.id,
+        topic_id: question.topic_id,
+        selected_option: selectedOption.letter,
+        is_correct: isCorrect,
+        time_taken_seconds: 30,
+        rescue_mode_triggered: !isCorrect,
+      });
     }
+  };
+
+  const handleNextQuestion = () => {
+    setSelectedOption(null);
+    setIsSubmitted(false);
+    setShowMistakeModal(false);
+    setQuestionIndex((prev) => Math.min(prev + 1, questions.length - 1));
   };
 
   return (
@@ -54,108 +108,109 @@ export default function PracticeScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Top Header */}
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>← {question.title}</Text>
+          <Text style={styles.backText}>← {currentTopic?.title ?? 'Practice'}</Text>
         </TouchableOpacity>
 
-        {/* Progress Counter */}
-        <Text style={styles.questionIndexText}>Question {question.index} of {question.total}</Text>
-
-        {/* Question Area with Generous Whitespace & Crisp Typography */}
-        <View style={styles.questionContainer}>
-          <Text style={styles.solveLabelText}>Solve:</Text>
-          <View style={styles.equationCard}>
-            <Text style={styles.equationText}>{question.equation}</Text>
+        {loading ? (
+          <Text style={styles.mutedText}>Loading practice questions…</Text>
+        ) : !question ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.mutedText}>No published questions for this topic yet.</Text>
           </View>
-        </View>
+        ) : (
+          <>
+            {/* Progress Counter */}
+            <Text style={styles.questionIndexText}>
+              Question {questionIndex + 1} of {questions.length}
+            </Text>
 
-        {/* Radio Option Choices */}
-        <View style={styles.optionsList}>
-          {question.options.map((opt) => {
-            const isSelected = selectedOption === opt.id;
-            const isCorrect = opt.isCorrect;
+            {/* Question */}
+            <View style={styles.questionContainer}>
+              <Text style={styles.solveLabelText}>Solve:</Text>
+              <View style={styles.equationCard}>
+                <MathView expression={question.question_text} size="md" textStyle={styles.equationText} />
+              </View>
+            </View>
 
-            return (
+            {/* Options */}
+            <View style={styles.optionsList}>
+              {question.options.map((opt) => {
+                const isSelected = selectedOption?.letter === opt.letter;
+                const isCorrect = opt.is_correct;
+
+                return (
+                  <TouchableOpacity
+                    key={opt.letter}
+                    style={[
+                      styles.optionCard,
+                      isSelected && !isSubmitted && styles.optionCardSelected,
+                      isSubmitted && isSelected && isCorrect && styles.optionCardCorrect,
+                      isSubmitted && isSelected && !isCorrect && styles.optionCardIncorrect,
+                      isSubmitted && !isSelected && isCorrect && styles.optionCardCorrect,
+                    ]}
+                    onPress={() => {
+                      if (!isSubmitted) setSelectedOption(opt);
+                    }}
+                    activeOpacity={0.85}
+                    disabled={isSubmitted}
+                  >
+                    <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                      {isSelected && <View style={styles.radioInnerDot} />}
+                    </View>
+                    <MathView expression={opt.text} size="sm" style={{ flex: 1 }} textStyle={styles.optionText} />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Action */}
+            {!isSubmitted ? (
               <TouchableOpacity
-                key={opt.id}
-                style={[
-                  styles.optionCard,
-                  isSelected && styles.optionCardSelected,
-                  isSubmitted && isSelected && isCorrect && styles.optionCardCorrect,
-                  isSubmitted && isSelected && !isCorrect && styles.optionCardIncorrect,
-                ]}
-                onPress={() => {
-                  if (!isSubmitted) setSelectedOption(opt.id);
-                }}
+                style={[styles.checkBtn, !selectedOption && styles.checkBtnDisabled]}
+                onPress={handleCheckAnswer}
+                disabled={!selectedOption}
                 activeOpacity={0.85}
               >
-                <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                  {isSelected && <View style={styles.radioInnerDot} />}
-                </View>
-                <Text style={styles.optionText}>{opt.text}</Text>
+                <Text style={styles.checkBtnText}>Check answer</Text>
               </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Check Answer Primary Action Button */}
-        {!isSubmitted ? (
-          <TouchableOpacity
-            style={[styles.checkBtn, !selectedOption && styles.checkBtnDisabled]}
-            onPress={handleCheckAnswer}
-            disabled={!selectedOption}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.checkBtnText}>Check answer</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.submittedBox}>
-            <TouchableOpacity
-              style={styles.nextQuestionBtn}
-              onPress={() => {
-                setSelectedOption(null);
-                setIsSubmitted(false);
-              }}
-            >
-              <Text style={styles.nextQuestionBtnText}>Next Question →</Text>
-            </TouchableOpacity>
-          </View>
+            ) : (
+              <View style={styles.submittedBox}>
+                <TouchableOpacity
+                  style={styles.nextQuestionBtn}
+                  onPress={handleNextQuestion}
+                  disabled={questionIndex >= questions.length - 1}
+                >
+                  <Text style={styles.nextQuestionBtnText}>
+                    {questionIndex < questions.length - 1 ? 'Next Question →' : 'Topic Complete 🎉'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
-      {/* Mistake Analysis Modal: "Let's find the mistake." */}
+      {/* Mistake Analysis Modal */}
       <Modal visible={showMistakeModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.mistakeHeaderTag}>MISTAKE ANALYSIS</Text>
             <Text style={styles.mistakeTitle}>Not quite.</Text>
-            <Text style={styles.userAnswerText}>Your answer: x = -2, -3</Text>
-            <Text style={styles.issueText}>The issue is the signs.</Text>
+            <Text style={styles.userAnswerText}>Your answer: {selectedOption?.text}</Text>
 
-            {/* Explanation Breakdown */}
             <View style={styles.breakdownCard}>
-              <Text style={styles.breakdownStep}>Remember:</Text>
-              <Text style={styles.breakdownMath}>x² - 5x + 6 = (x - 2)(x - 3)</Text>
-              <Text style={styles.breakdownStep}>So:</Text>
-              <Text style={styles.breakdownMathBold}>x = 2  or  x = 3</Text>
+              <Text style={styles.breakdownMath}>{question?.explanation}</Text>
             </View>
 
-            {/* 💡 Remember Callout Box */}
-            <View style={styles.rememberCallout}>
-              <Text style={styles.rememberTitle}>💡 Remember</Text>
-              <Text style={styles.rememberBody}>
-                When multiplying two negative numbers, the result is positive. (-2) × (-3) = +6 while (-2) + (-3) = -5.
-              </Text>
-            </View>
+            {question?.exam_shortcut ? (
+              <View style={styles.rememberCallout}>
+                <Text style={styles.rememberTitle}>💡 Exam Shortcut</Text>
+                <Text style={styles.rememberBody}>{question.exam_shortcut}</Text>
+              </View>
+            ) : null}
 
-            <TouchableOpacity
-              style={styles.trySimilarBtn}
-              onPress={() => {
-                setShowMistakeModal(false);
-                setSelectedOption(null);
-                setIsSubmitted(false);
-              }}
-            >
-              <Text style={styles.trySimilarBtnText}>Try a similar question</Text>
+            <TouchableOpacity style={styles.trySimilarBtn} onPress={() => setShowMistakeModal(false)}>
+              <Text style={styles.trySimilarBtnText}>Continue</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -181,6 +236,18 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
       color: colors.primary,
       fontSize: 15,
       fontWeight: '700',
+    },
+    mutedText: {
+      color: colors.textMuted,
+      fontSize: 13,
+    },
+    emptyCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 20,
+      alignItems: 'center',
     },
     questionIndexText: {
       color: colors.textMuted,
@@ -211,10 +278,11 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
     },
     equationText: {
       color: colors.text,
-      fontSize: 26,
+      fontSize: 20,
       fontWeight: '800',
       fontFamily: 'monospace',
-      letterSpacing: 1,
+      letterSpacing: 0.5,
+      textAlign: 'center',
     },
     optionsList: {
       gap: 12,
@@ -266,8 +334,9 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
     },
     optionText: {
       color: colors.text,
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: '600',
+      flex: 1,
     },
     checkBtn: {
       backgroundColor: '#F59E0B',
@@ -330,12 +399,7 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
       fontSize: 14,
       fontWeight: '600',
       marginTop: 4,
-    },
-    issueText: {
-      color: colors.textMuted,
-      fontSize: 14,
-      marginTop: 2,
-      marginBottom: 16,
+      marginBottom: 12,
     },
     breakdownCard: {
       backgroundColor: colors.background,
@@ -345,28 +409,12 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
       padding: 14,
       marginBottom: 16,
     },
-    breakdownStep: {
-      color: colors.textMuted,
-      fontSize: 12,
-      marginVertical: 2,
-    },
     breakdownMath: {
       color: colors.text,
-      fontSize: 15,
-      fontFamily: 'monospace',
+      fontSize: 14,
       fontWeight: '600',
-      marginVertical: 2,
+      lineHeight: 20,
     },
-    breakdownMathBold: {
-      color: '#10B981',
-      fontSize: 15,
-      fontFamily: 'monospace',
-      fontWeight: '800',
-      marginVertical: 2,
-    },
-    // "Remember" tip callout reuses the same amber advisory-box style as
-    // warning surfaces elsewhere, rather than introducing a second
-    // one-off blue "info" category.
     rememberCallout: {
       backgroundColor: colors.warningSurface,
       borderColor: colors.warningBorder,

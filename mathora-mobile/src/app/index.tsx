@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,12 +11,70 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/authContext';
+import {
+  getMobileTopics,
+  fetchMyStudentProfileId,
+  fetchAnalysisStats,
+  fetchTopicScores,
+  fetchMyAssignments,
+  type AnalysisStats,
+  type TopicScore,
+  type StudentAssignmentRow,
+} from '@/services/supabaseService';
+import type { Topic } from '@/services/dataService';
 
+// Real, Supabase-wired home dashboard — this used to be entirely
+// hardcoded (fixed name/streak/topics/scores). Mirrors
+// mathora-web/src/app/student/page.tsx's data sources: fetchAnalysisStats
+// for streak/accuracy, fetchTopicScores for per-topic mastery (the live
+// `topics` table has no mastery_percentage column of its own — see
+// fetchTopicScores's doc comment), fetchMyAssignments for pending work.
 export default function MathoraHomeScreen() {
   const router = useRouter();
   const colors = useTheme();
   const scheme = useColorScheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { user } = useAuth();
+
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [scores, setScores] = useState<TopicScore[]>([]);
+  const [stats, setStats] = useState<AnalysisStats | null>(null);
+  const [assignments, setAssignments] = useState<StudentAssignmentRow[]>([]);
+
+  useEffect(() => {
+    getMobileTopics().then(setTopics);
+    fetchMyAssignments().then((rows) =>
+      setAssignments(rows.filter((a) => a.status === 'not_started' || a.status === 'in_progress'))
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMyStudentProfileId(user.id).then((profileId) => {
+      if (!profileId) return;
+      fetchAnalysisStats(profileId).then(setStats);
+      fetchTopicScores(profileId).then(setScores);
+    });
+  }, [user?.id]);
+
+  const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(' ')[0] ?? 'there';
+  const accuracyPct = stats && stats.totalAttempted > 0 ? Math.round((stats.totalCorrect / stats.totalAttempted) * 100) : null;
+
+  // "Continue learning" targets the weakest topic the student has
+  // actually attempted (most room to improve); falls back to the
+  // first topic in the syllabus for a brand-new student with no
+  // attempts yet at all.
+  const attemptedSorted = [...scores].sort((a, b) => a.mastery_percentage - b.mastery_percentage);
+  const continueTopic = attemptedSorted[0];
+  const continueTitle = continueTopic?.topic_title ?? topics[0]?.title ?? 'Practice';
+  const continueTopicId = continueTopic?.topic_id ?? topics[0]?.id;
+  const continueMastery = continueTopic?.mastery_percentage ?? 0;
+
+  // "Focus today" shows up to two more attempted topics beyond the
+  // "continue learning" one; a brand-new student just sees nothing
+  // here rather than fabricated numbers.
+  const focusTopics = attemptedSorted.slice(1, 3);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,12 +83,14 @@ export default function MathoraHomeScreen() {
         {/* Friendly Top Header */}
         <View style={styles.topHeader}>
           <View>
-            <Text style={styles.greetingText}>Good afternoon, Ahmed 👋</Text>
-            <Text style={styles.subGreetingText}>SS2 Mathematics • WAEC 2026</Text>
+            <Text style={styles.greetingText}>Good {timeOfDay()}, {firstName} 👋</Text>
+            <Text style={styles.subGreetingText}>Mathematics • WAEC Prep</Text>
           </View>
 
           <View style={styles.streakBadge}>
-            <Text style={styles.streakText}>🔥 5-day streak · 120 XP</Text>
+            <Text style={styles.streakText}>
+              🔥 {stats?.currentStreakDays ?? 0}-day streak{accuracyPct !== null ? ` · ${accuracyPct}% accuracy` : ''}
+            </Text>
           </View>
         </View>
 
@@ -38,19 +98,18 @@ export default function MathoraHomeScreen() {
         <Text style={styles.sectionHeaderTitle}>Continue learning</Text>
         <TouchableOpacity
           style={styles.continueCard}
-          onPress={() => router.push('/practice')}
+          onPress={() => router.push(continueTopicId ? `/practice?topicId=${continueTopicId}` : '/practice')}
           activeOpacity={0.9}
         >
           <View style={styles.continueCardHeader}>
-            <Text style={styles.topicName}>Quadratic Equations</Text>
-            <Text style={styles.subtopicName}>Factorisation</Text>
+            <Text style={styles.topicName}>{continueTitle}</Text>
           </View>
 
           <View style={styles.progressRow}>
             <View style={styles.progressBarTrack}>
-              <View style={[styles.progressBarFill, { width: '72%' }]} />
+              <View style={[styles.progressBarFill, { width: `${continueMastery}%` }]} />
             </View>
-            <Text style={styles.progressPercentageText}>72%</Text>
+            <Text style={styles.progressPercentageText}>{continueMastery}%</Text>
           </View>
 
           <View style={styles.continueBtnRow}>
@@ -58,48 +117,58 @@ export default function MathoraHomeScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* 2. Your Focus Today Grid */}
-        <Text style={styles.sectionHeaderTitle}>Your focus today</Text>
-        <View style={styles.focusGrid}>
-          <TouchableOpacity
-            style={styles.focusCard}
-            onPress={() => router.push('/explore')}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.focusTopicTitle}>Algebra</Text>
-            <Text style={styles.focusScoreMint}>82%</Text>
-            <View style={styles.badgeMint}>
-              <Text style={styles.badgeMintText}>Strong</Text>
+        {/* 2. Your Focus Today Grid — only shown once there's real
+            attempted-topic data to show; nothing fabricated. */}
+        {focusTopics.length > 0 && (
+          <>
+            <Text style={styles.sectionHeaderTitle}>Your focus today</Text>
+            <View style={styles.focusGrid}>
+              {focusTopics.map((t) => {
+                const strong = t.mastery_percentage >= 70;
+                return (
+                  <TouchableOpacity
+                    key={t.topic_id}
+                    style={styles.focusCard}
+                    onPress={() => router.push(`/practice?topicId=${t.topic_id}`)}
+                    activeOpacity={0.9}
+                  >
+                    <Text style={styles.focusTopicTitle}>{t.topic_title}</Text>
+                    <Text style={strong ? styles.focusScoreMint : styles.focusScoreAmber}>
+                      {t.mastery_percentage}%
+                    </Text>
+                    <View style={strong ? styles.badgeMint : styles.badgeAmber}>
+                      <Text style={strong ? styles.badgeMintText : styles.badgeAmberText}>
+                        {strong ? 'Strong' : 'Improve'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          </TouchableOpacity>
+          </>
+        )}
 
-          <TouchableOpacity
-            style={styles.focusCard}
-            onPress={() => router.push('/explore')}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.focusTopicTitle}>Geometry</Text>
-            <Text style={styles.focusScoreAmber}>64%</Text>
-            <View style={styles.badgeAmber}>
-              <Text style={styles.badgeAmberText}>Improve</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* 3. Today's Practice Card */}
+        {/* 3. Pending Assignments — real data (fetchMyAssignments),
+            replaces the old fixed "5 questions · ~8 min" filler. */}
         <Text style={styles.sectionHeaderTitle}>Today&apos;s practice</Text>
         <View style={styles.practiceCard}>
           <View style={styles.practiceInfoRow}>
-            <Text style={styles.practiceMetaText}>5 questions · ~8 min</Text>
+            <Text style={styles.practiceMetaText}>
+              {assignments.length > 0
+                ? `${assignments.length} assignment${assignments.length > 1 ? 's' : ''} pending`
+                : 'No assignments pending'}
+            </Text>
             <Text style={styles.practiceTargetText}>WAEC SSCE Standard</Text>
           </View>
 
           <TouchableOpacity
             style={styles.startPracticeBtn}
-            onPress={() => router.push('/practice')}
+            onPress={() => router.push(assignments.length > 0 ? '/assignments' : '/practice')}
             activeOpacity={0.9}
           >
-            <Text style={styles.startPracticeBtnText}>Start Practice</Text>
+            <Text style={styles.startPracticeBtnText}>
+              {assignments.length > 0 ? 'View Assignments' : 'Start Practice'}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -126,7 +195,7 @@ export default function MathoraHomeScreen() {
             onPress={() => router.push('/struggling-analysis')}
           >
             <Text style={styles.linkTitleRed}>⚠ Mistake Analysis</Text>
-            <Text style={styles.linkSub}>2 Gaps Diagnosed</Text>
+            <Text style={styles.linkSub}>Review your weak spots</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -164,6 +233,13 @@ export default function MathoraHomeScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function timeOfDay(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
 }
 
 function createStyles(colors: ReturnType<typeof useTheme>) {
@@ -374,9 +450,11 @@ function createStyles(colors: ReturnType<typeof useTheme>) {
     quickLinksRow: {
       flexDirection: 'row',
       gap: 12,
+      flexWrap: 'wrap',
     },
     linkCard: {
       flex: 1,
+      minWidth: '45%',
       backgroundColor: colors.surfaceSecondary,
       borderRadius: 12,
       padding: 14,

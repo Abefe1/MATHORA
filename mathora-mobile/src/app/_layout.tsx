@@ -15,6 +15,7 @@ import Toaster from '@/components/Toaster';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { ToastProvider } from '@/lib/toastContext';
 import { registerForPushNotifications } from '@/services/pushNotifications';
+import { useOfflineFlush } from '@/hooks/useOfflineFlush';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,6 +25,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  // Drives the offline attempt/assignment-answer queues (services/
+  // offlineSync.ts) — mounted here rather than per-screen so a queued
+  // entry from an earlier screen still gets retried on foreground
+  // return/sign-in even after navigating away from where it was queued.
+  useOfflineFlush();
 
   useEffect(() => {
     if (loading) return;
