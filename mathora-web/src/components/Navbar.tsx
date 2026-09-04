@@ -42,6 +42,11 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
   const { pendingCount, syncing } = useOfflineFlush();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
+  // Prefer the signed-in user's real name over the `userName` prop —
+  // that prop is only a fallback for signed-out/demo views, but every
+  // call site still passes a hardcoded placeholder name.
+  const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || userName;
+
   const toggleTheme = () => {
     if (theme === 'light') setTheme('dark');
     else if (theme === 'dark') setTheme('system');
@@ -155,7 +160,7 @@ export default function Navbar({ currentRole = 'student', userName = 'Chidiebere
               className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
             >
               <div className="hidden sm:flex flex-col items-end">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">{userName}</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white">{displayName}</span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border flex items-center gap-1 ${getRoleBadgeStyle(currentRole)}`}>
                   {getRoleLabel(currentRole)} <ChevronDown className="w-3 h-3" />
                 </span>
