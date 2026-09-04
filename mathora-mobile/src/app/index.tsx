@@ -107,6 +107,14 @@ export default function MathoraHomeScreen() {
         <View style={styles.quickLinksRow}>
           <TouchableOpacity
             style={styles.linkCard}
+            onPress={() => router.push('/activities')}
+          >
+            <Text style={styles.linkTitle}>🧩 Activities</Text>
+            <Text style={styles.linkSub}>Ordering & matching practice</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.linkCard}
             onPress={() => router.push('/mock-exam')}
           >
             <Text style={styles.linkTitle}>⏱️ Timed Mock Exam</Text>
