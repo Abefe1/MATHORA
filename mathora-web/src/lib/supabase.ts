@@ -1,14 +1,23 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from './supabase/client';
 import { INITIAL_TOPICS } from './mockData';
 import { Topic, Question, WorkedExample, School, SchoolStatus, ClassDirectoryEntry, ClassRosterEntry, ClassJoinRequest, ClassLevel } from './types';
 import { enqueueAttempt, getOfflineQueue, removeFromOfflineQueue, type OfflineAttempt } from './offlineSync';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-export const supabase = (supabaseUrl && supabaseAnonKey)
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Every exported function below builds its own client via createClient()
+// (from lib/supabase/client.ts, the @supabase/ssr browser client whose
+// session lives in cookies) rather than sharing one built here with
+// plain @supabase/supabase-js. That used to be a real bug: a client
+// built directly with @supabase/supabase-js's createClient() persists
+// its session to localStorage by default, a completely different
+// storage than the cookies @supabase/ssr uses — so it never saw the
+// session actually established at login, and every RLS-gated call
+// below silently ran as an anonymous, signed-out user (reads fell
+// back to mock/empty data; writes like submitQuestionAttempt or
+// createTeacherClassInSupabase silently no-opped into their local
+// fallback). createClient() from lib/supabase/client.ts is cheap to
+// call repeatedly — @supabase/ssr caches one browser-side singleton
+// internally — so each function below just calls it locally, the same
+// way every other client component in this app already does.
 
 // Fallback questions and worked examples extracted from INITIAL_TOPICS
 const FALLBACK_QUESTIONS: Question[] = INITIAL_TOPICS.flatMap((t) => t.questions);
@@ -16,6 +25,7 @@ const FALLBACK_WORKED_EXAMPLES: WorkedExample[] = INITIAL_TOPICS.flatMap((t) => 
 
 // --- Student Topic Browsing ---
 export async function fetchTopics(): Promise<Topic[]> {
+  const supabase = createClient();
   if (!supabase) return INITIAL_TOPICS;
   try {
     const { data, error } = await supabase.from('topics').select('*');
@@ -28,6 +38,7 @@ export async function fetchTopics(): Promise<Topic[]> {
 
 // --- Practice Question Fetcher ---
 export async function fetchQuestions(topicId?: string): Promise<Question[]> {
+  const supabase = createClient();
   if (!supabase) {
     return topicId ? FALLBACK_QUESTIONS.filter((q) => q.topic_id === topicId) : FALLBACK_QUESTIONS;
   }
@@ -76,6 +87,7 @@ export async function fetchQuestions(topicId?: string): Promise<Question[]> {
 
 // --- Worked Examples Fetcher ---
 export async function fetchWorkedExamples(topicId?: string): Promise<WorkedExample[]> {
+  const supabase = createClient();
   if (!supabase) return FALLBACK_WORKED_EXAMPLES;
   try {
     const { data, error } = await supabase.from('worked_examples').select('*');
@@ -111,6 +123,7 @@ type AttemptInput = {
 // Returns false (never throws) on any failure so callers can decide
 // whether to queue/re-queue the attempt.
 async function insertAttemptRow(attempt: AttemptInput): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return false;
 
   try {
@@ -142,6 +155,7 @@ async function insertAttemptRow(attempt: AttemptInput): Promise<boolean> {
 }
 
 export async function submitQuestionAttempt(attempt: AttemptInput): Promise<{ success: boolean; offlineQueued?: boolean }> {
+  const supabase = createClient();
   if (!supabase || (typeof navigator !== 'undefined' && !navigator.onLine)) {
     enqueueAttempt(attempt);
     return { success: true, offlineQueued: true };
@@ -162,6 +176,7 @@ export async function submitQuestionAttempt(attempt: AttemptInput): Promise<{ su
 // event and to sign-in. Entries that still fail (still offline, RLS
 // rejection, etc.) are left in the queue for the next attempt.
 export async function flushOfflineQueue(): Promise<{ synced: number; remaining: number }> {
+  const supabase = createClient();
   const queue: OfflineAttempt[] = getOfflineQueue();
   if (!supabase || queue.length === 0) {
     return { synced: 0, remaining: queue.length };
@@ -204,6 +219,7 @@ export async function createTeacherClassInSupabase(
     avgMastery: 0,
   };
 
+  const supabase = createClient();
   if (!supabase || !authUserId) return optimisticFallback;
 
   try {
@@ -229,6 +245,7 @@ export async function createTeacherClassInSupabase(
 // --- Schools: search, create/suggest, join ---
 
 export async function searchSchools(query: string, state?: string): Promise<School[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   try {
     let q = supabase.from('schools').select('*').ilike('name', `%${query}%`);
@@ -246,6 +263,7 @@ export async function searchSchools(query: string, state?: string): Promise<Scho
 // directly — unlike the class-creation helper above, silently falling
 // back here would hide "this school already exists" from the teacher.
 export async function createOrSuggestSchool(name: string, state: string, address?: string): Promise<School> {
+  const supabase = createClient();
   if (!supabase) throw new Error('Not connected');
   const { data, error } = await supabase.rpc('create_or_suggest_school', {
     p_name: name,
@@ -257,12 +275,14 @@ export async function createOrSuggestSchool(name: string, state: string, address
 }
 
 export async function joinSchool(schoolId: string): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return false;
   const { error } = await supabase.rpc('join_school', { p_school_id: schoolId });
   return !error;
 }
 
 export async function fetchMyTeacherSchoolId(authUserId: string): Promise<string | null> {
+  const supabase = createClient();
   if (!supabase) return null;
   try {
     const { data, error } = await supabase
@@ -286,6 +306,7 @@ export async function fetchMyTeacherSchoolId(authUserId: string): Promise<string
 export type TeacherDirectoryEntry = { id: string; full_name: string; verified: boolean };
 
 export async function fetchTeachersAtSchool(schoolId: string): Promise<TeacherDirectoryEntry[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   try {
     const { data: teacherRows, error: teacherError } = await supabase
@@ -314,6 +335,7 @@ export async function fetchTeachersAtSchool(schoolId: string): Promise<TeacherDi
 // --- Schools: admin moderation ---
 
 export async function fetchSchoolsForAdmin(status?: SchoolStatus): Promise<School[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   try {
     let q = supabase.from('schools').select('*').order('created_at', { ascending: false });
@@ -327,24 +349,28 @@ export async function fetchSchoolsForAdmin(status?: SchoolStatus): Promise<Schoo
 }
 
 export async function updateSchoolStatus(schoolId: string, status: SchoolStatus): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return false;
   const { error } = await supabase.from('schools').update({ status, updated_at: new Date().toISOString() }).eq('id', schoolId);
   return !error;
 }
 
 export async function toggleSchoolVerified(schoolId: string, verified: boolean): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return false;
   const { error } = await supabase.from('schools').update({ verified, updated_at: new Date().toISOString() }).eq('id', schoolId);
   return !error;
 }
 
 export async function deleteSchool(schoolId: string): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return false;
   const { error } = await supabase.from('schools').delete().eq('id', schoolId);
   return !error;
 }
 
 export async function fetchPlatformSelfServeEnabled(): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return true;
   try {
     const { data, error } = await supabase.from('platform_settings').select('self_serve_school_creation_enabled').eq('id', 1).single();
@@ -356,6 +382,7 @@ export async function fetchPlatformSelfServeEnabled(): Promise<boolean> {
 }
 
 export async function updatePlatformSelfServeEnabled(enabled: boolean): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return false;
   const { error } = await supabase
     .from('platform_settings')
@@ -370,6 +397,7 @@ export async function updatePlatformSelfServeEnabled(enabled: boolean): Promise<
 // student can never see it (see mathora_schema_schools_patch.sql).
 
 export async function fetchClassDirectory(teacherId: string): Promise<ClassDirectoryEntry[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   try {
     const { data, error } = await supabase.from('class_directory').select('*').eq('teacher_id', teacherId);
@@ -386,6 +414,7 @@ export async function bulkAddRosterEntries(
   classId: string,
   entries: { full_name: string; verification_value?: string }[]
 ): Promise<ClassRosterEntry[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   const { data, error } = await supabase.rpc('bulk_add_roster_entries', {
     p_class_id: classId,
@@ -396,6 +425,7 @@ export async function bulkAddRosterEntries(
 }
 
 export async function fetchClassRoster(classId: string): Promise<ClassRosterEntry[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   try {
     const { data, error } = await supabase.from('class_roster_entries').select('*').eq('class_id', classId).order('created_at');
@@ -409,6 +439,7 @@ export async function fetchClassRoster(classId: string): Promise<ClassRosterEntr
 // --- Class join requests (search-and-join approval queue) ---
 
 export async function fetchPendingJoinRequests(classId: string): Promise<ClassJoinRequest[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   try {
     const { data, error } = await supabase
@@ -425,6 +456,7 @@ export async function fetchPendingJoinRequests(classId: string): Promise<ClassJo
 }
 
 export async function decideJoinRequest(requestId: string, approve: boolean): Promise<boolean> {
+  const supabase = createClient();
   if (!supabase) return false;
   const { error } = await supabase.rpc('decide_join_request', {
     p_request_id: requestId,
@@ -439,6 +471,7 @@ export async function findOrRequestClassJoin(
   classId: string,
   verificationValue?: string
 ): Promise<{ status: 'joined' | 'already_member' | 'pending' } | null> {
+  const supabase = createClient();
   if (!supabase) return null;
   const { data, error } = await supabase.rpc('find_or_request_class_join', {
     p_class_id: classId,
@@ -480,6 +513,7 @@ const EMPTY_ANALYSIS_STATS: AnalysisStats = {
 // callers that only have the signed-in user's auth id should resolve it
 // first the same way insertAttemptRow does.
 export async function fetchAnalysisStats(studentProfileId: string): Promise<AnalysisStats> {
+  const supabase = createClient();
   if (!supabase) return EMPTY_ANALYSIS_STATS;
   try {
     // 500 most recent attempts is plenty for a streak/weekly-days
@@ -543,6 +577,7 @@ export async function fetchAnalysisStats(studentProfileId: string): Promise<Anal
 }
 
 export async function fetchMyStudentProfileId(authUserId: string): Promise<string | null> {
+  const supabase = createClient();
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.from('students').select('id').eq('user_id', authUserId).single();
@@ -570,6 +605,7 @@ export interface TopicScore {
 
 // Per-exercise (per-topic) breakdown, in syllabus order, for one student.
 export async function fetchTopicScores(studentProfileId: string): Promise<TopicScore[]> {
+  const supabase = createClient();
   if (!supabase) return [];
   try {
     const { data, error } = await supabase
@@ -650,6 +686,7 @@ export interface ClassScoreSummary {
 // student_id rows).
 export async function fetchClassScoreSummary(classId: string): Promise<ClassScoreSummary> {
   const empty: ClassScoreSummary = { students: [], class_average_mastery_percentage: 0, class_total_attempted: 0, class_total_correct: 0 };
+  const supabase = createClient();
   if (!supabase) return empty;
   try {
     const { data: members, error: membersError } = await supabase
@@ -697,5 +734,47 @@ export async function fetchClassScoreSummary(classId: string): Promise<ClassScor
     return { students, class_average_mastery_percentage, class_total_attempted, class_total_correct };
   } catch {
     return empty;
+  }
+}
+
+// --- Teacher dashboard: this teacher's own classes, with roster/mastery
+// stats attached. No teacherId parameter needed — classes_select_owner_or_
+// enrolled (mathora_schema_auth_patch.sql) already scopes the plain
+// `classes` select to `teacher_id = current_teacher_id()`, so whatever
+// comes back is already just this teacher's own classes.
+export interface TeacherClassSummary {
+  id: string;
+  name: string;
+  code: string;
+  class_level: ClassLevel;
+  studentsCount: number;
+  avgMastery: number;
+}
+
+export async function fetchMyClassesWithStats(): Promise<TeacherClassSummary[]> {
+  const supabase = createClient();
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('classes')
+      .select('id, name, class_level, join_code')
+      .order('created_at');
+    if (error || !data) return [];
+
+    return await Promise.all(
+      data.map(async (c) => {
+        const summary = await fetchClassScoreSummary(c.id);
+        return {
+          id: c.id,
+          name: c.name,
+          code: c.join_code,
+          class_level: c.class_level,
+          studentsCount: summary.students.length,
+          avgMastery: summary.class_average_mastery_percentage,
+        };
+      })
+    );
+  } catch {
+    return [];
   }
 }

@@ -1,12 +1,19 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { Card, Button, Badge, MathMotif } from '@/components/ui/Primitives';
 import { GraduationCap, Plus, Users, BarChart2, School as SchoolIcon } from 'lucide-react';
 
-import { createTeacherClassInSupabase, fetchMyTeacherSchoolId } from '@/lib/supabase';
+import {
+  createTeacherClassInSupabase,
+  fetchMyTeacherSchoolId,
+  fetchMyClassesWithStats,
+  fetchClassScoreSummary,
+  type TeacherClassSummary,
+  type ClassStudentScore,
+} from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import type { ClassLevel } from '@/lib/types';
 
@@ -17,10 +24,41 @@ export default function TeacherDashboard() {
   const [showClassModal, setShowClassModal] = useState(false);
   const [newClassName, setNewClassName] = useState('');
   const [newClassLevel, setNewClassLevel] = useState<ClassLevel>('SS2');
-  const [classList, setClassList] = useState([
-    { id: 'c1', name: 'SS2 Mathematics A', code: 'MATH-SS2A', studentsCount: 42, avgMastery: 74 },
-    { id: 'c2', name: 'SS2 Further Maths', code: 'FM-SS2B', studentsCount: 28, avgMastery: 81 }
-  ]);
+  const [classList, setClassList] = useState<TeacherClassSummary[]>([]);
+  const [classListLoading, setClassListLoading] = useState(true);
+
+  // Flattened per-student rows across every one of this teacher's
+  // classes, for the ledger table below — real totals from
+  // fetchClassScoreSummary rather than the two hardcoded per-topic
+  // columns this table used to show (Quadratic Equations/Trigonometry
+  // scores for three fixed names), which no query here actually
+  // produces cheaply per-topic per-student.
+  const [ledgerRows, setLedgerRows] = useState<(ClassStudentScore & { class_name: string })[]>([]);
+  const [ledgerLoading, setLedgerLoading] = useState(true);
+
+  const loadClasses = useCallback(async () => {
+    setClassListLoading(true);
+    const classes = await fetchMyClassesWithStats();
+    setClassList(classes);
+    setClassListLoading(false);
+
+    setLedgerLoading(true);
+    const perClass = await Promise.all(
+      classes.map(async (c) => {
+        const summary = await fetchClassScoreSummary(c.id);
+        return summary.students.map((s) => ({ ...s, class_name: c.name }));
+      })
+    );
+    setLedgerRows(perClass.flat());
+    setLedgerLoading(false);
+  }, []);
+
+  useEffect(() => {
+    // Load-on-mount — see admin/page.tsx's loadAuthoredContent for the
+    // same justified suppression.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadClasses();
+  }, [loadClasses]);
 
   // null = not checked yet, '' = checked and no school joined, else a
   // real school_id — only show the "join a school" prompt once we
@@ -41,7 +79,7 @@ export default function TeacherDashboard() {
     if (!newClassName.trim()) return;
 
     const createdClass = await createTeacherClassInSupabase(newClassName, newClassLevel, user?.id);
-    setClassList((prev) => [...prev, createdClass]);
+    setClassList((prev) => [...prev, { ...createdClass, class_level: newClassLevel }]);
     setNewClassName('');
     setShowClassModal(false);
   };
@@ -87,6 +125,10 @@ export default function TeacherDashboard() {
 
         {/* Classes Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {classListLoading && <p className="text-xs text-slate-500 dark:text-slate-400">Loading your classes…</p>}
+          {!classListLoading && classList.length === 0 && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">No classes yet — create one to get started.</p>
+          )}
           {classList.map((cls) => (
             <Card key={cls.id} variant="ledger" className="hover:border-emerald-500/60 transition-all">
               <div className="flex items-start justify-between">
@@ -125,7 +167,7 @@ export default function TeacherDashboard() {
         {/* Class Performance Ledger Table */}
         <Card variant="paper">
           <h2 className="text-lg font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Student Performance Ledger (SS2)
+            <BarChart2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Student Performance Ledger
           </h2>
 
           <div className="overflow-x-auto">
@@ -134,33 +176,43 @@ export default function TeacherDashboard() {
                 <tr>
                   <th className="px-4 py-3 rounded-l-lg">Student Name</th>
                   <th className="px-4 py-3">Class</th>
-                  <th className="px-4 py-3">Quadratic Equations</th>
-                  <th className="px-4 py-3">Trigonometry</th>
-                  <th className="px-4 py-3 rounded-r-lg">Rescue Mode Triggers</th>
+                  <th className="px-4 py-3">Questions Attempted</th>
+                  <th className="px-4 py-3">Correct</th>
+                  <th className="px-4 py-3 rounded-r-lg">Avg Mastery</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-                <tr className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
-                  <td className="px-4 py-3.5 font-bold font-sans">Chidiebere Okafor</td>
-                  <td className="px-4 py-3 text-xs">SS2 Maths A</td>
-                  <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-bold">65%</td>
-                  <td className="px-4 py-3 text-amber-600 dark:text-amber-400 font-bold">40%</td>
-                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">2 Resolved</td>
-                </tr>
-                <tr className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
-                  <td className="px-4 py-3.5 font-bold font-sans">Amina Yusuf</td>
-                  <td className="px-4 py-3 text-xs">SS2 Maths A</td>
-                  <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-bold">88%</td>
-                  <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-bold">75%</td>
-                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">0 Active</td>
-                </tr>
-                <tr className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
-                  <td className="px-4 py-3.5 font-bold font-sans">Tunde Folorunsho</td>
-                  <td className="px-4 py-3 text-xs">SS2 Maths A</td>
-                  <td className="px-4 py-3 text-rose-600 dark:text-rose-400 font-bold">30%</td>
-                  <td className="px-4 py-3 text-amber-600 dark:text-amber-400 font-bold">45%</td>
-                  <td className="px-4 py-3 text-xs text-rose-600 dark:text-rose-400 font-bold">3 Pending Review</td>
-                </tr>
+                {ledgerLoading && (
+                  <tr>
+                    <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400" colSpan={5}>Loading…</td>
+                  </tr>
+                )}
+                {!ledgerLoading && ledgerRows.length === 0 && (
+                  <tr>
+                    <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400" colSpan={5}>
+                      No student activity yet.
+                    </td>
+                  </tr>
+                )}
+                {ledgerRows.map((row) => (
+                  <tr key={row.student_id} className="hover:bg-slate-100/50 dark:hover:bg-slate-900/50">
+                    <td className="px-4 py-3.5 font-bold font-sans">{row.full_name}</td>
+                    <td className="px-4 py-3 text-xs">{row.class_name}</td>
+                    <td className="px-4 py-3">{row.total_attempted}</td>
+                    <td className="px-4 py-3">{row.total_correct}</td>
+                    <td
+                      className={`px-4 py-3 font-bold ${
+                        row.average_mastery_percentage >= 70
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : row.average_mastery_percentage >= 40
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-rose-600 dark:text-rose-400'
+                      }`}
+                    >
+                      {row.average_mastery_percentage}%
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
